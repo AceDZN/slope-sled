@@ -109,6 +109,9 @@ export class Assets {
       const box = new THREE.Box3().setFromObject(w);
       const sx = width / Math.max(0.01, box.max.x - box.min.x);
       w.scale.x *= Math.min(2.5, Math.max(0.4, sx));
+      // Tall rock walls stay shallow so they never bulge in front of the track and grid.
+      const depth = box.max.z - box.min.z;
+      if (depth > 2.4) w.scale.z *= 2.4 / depth;
       return w;
     }
     const g = new THREE.Group();

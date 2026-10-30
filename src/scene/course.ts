@@ -285,7 +285,7 @@ export class Course {
     const op = above ? (c.strict ? '>' : '≥') : c.strict ? '<' : '≤';
     const rhs = equation(c.m, c.b).replace('y = ', '');
     const mid = (c.x0 + c.x1) / 2;
-    this.labels.set(`c:k${c.id}`, [mid, c.m * mid + c.b + (above ? 0.9 : -0.9), GRID_Z], `${ltr(`y ${op} ${rhs}`)}`, `lbl ineq ${above ? 'ineq-above' : 'ineq-below'}`);
+    this.labels.set(`c:k${c.id}`, [mid, c.m * mid + c.b + (above ? -1.3 : 1.3), GRID_Z], `${ltr(`y ${op} ${rhs}`)}`, `lbl ineq ${above ? 'ineq-above' : 'ineq-below'}`);
 
     // 3D props whose surfaces sit exactly on the boundary.
     if (c.look === 'rocks' || c.look === 'ridge') {
@@ -294,7 +294,7 @@ export class Course {
         const x = c.x0 + ((c.x1 - c.x0) * (i + 0.5)) / n2;
         const topY = Math.min(c.m * (x - 1) + c.b, c.m * (x + 1) + c.b);
         const rock = this.assets.rock(Math.max(0.6, topY - y0), 2.0 + (i % 2) * 0.3);
-        rock.position.set(x, y0, (i % 3) - 1);
+        rock.position.set(x, y0, -0.9 - (i % 2) * 0.3);
         rock.rotation.y = i * 1.7;
         this.staticGroup.add(rock);
       }
@@ -498,7 +498,7 @@ export class Course {
           this.labels.set(`c:t${i}`, [xa + 0.4, yAt(p.line, xa) + 1.2, GRID_Z], `<span class="seg-tag" style="--c:${SEG_CSS[i % 4]}">${i + 1}</span>`, 'lbl tag');
         }
       }
-      if (o.mode !== 'build') this.embankment(p.line.m, p.line.b, xa, xb, i);
+      if (o.mode === 'ride') this.embankment(p.line.m, p.line.b, xa, xb, i);
     });
     if (o.mode === 'ride' && !st.segments[st.segments.length - 1].launch) {
       // Kicker at the hut: a short lip the sled pops off into the powder.

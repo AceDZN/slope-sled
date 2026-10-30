@@ -685,6 +685,8 @@ export class Game {
       cam.updateProjectionMatrix();
     } else if (this.mode === 'crash') {
       this.updateCrash(dt, dtReal);
+    } else if (this.mode === 'result' && this.outcome && !this.outcome.ok) {
+      this.frameBuild(dtReal, false);
     }
     if (this.shake > 0 && !this.world.reducedMotion) {
       cam.position.x += (Math.random() - 0.5) * this.shake;
@@ -741,12 +743,17 @@ export class Game {
     this.course.setGridOpacity(k);
     this.labels.hidden = k < 0.5;
     const c = this.crashAt;
-    const side = new THREE.Vector3(c.x - 3, c.y + 5, 30);
-    cam.position.lerp(side, Math.min(1, dtReal * 2.2));
-    this.camLook.lerp(new THREE.Vector3(c.x, c.y, 0), Math.min(1, dtReal * 3));
-    cam.lookAt(this.camLook);
-    cam.fov += (40 - cam.fov) * Math.min(1, dtReal * 2);
-    cam.updateProjectionMatrix();
+    if (this.modeT < 0.9) {
+      const side = new THREE.Vector3(c.x - 3, c.y + 4, 16);
+      cam.position.lerp(side, Math.min(1, dtReal * 2.2));
+      this.camLook.lerp(new THREE.Vector3(c.x, c.y, 0), Math.min(1, dtReal * 3));
+      cam.lookAt(this.camLook);
+      cam.fov += (40 - cam.fov) * Math.min(1, dtReal * 2);
+      cam.updateProjectionMatrix();
+    } else {
+      // Pull back to the whole grid so the mistake reads against the coordinates.
+      this.frameBuild(dtReal * 0.7, false);
+    }
     if (this.modeT > 2.2 && this.mode === 'crash') {
       this.crashT = 0;
       this.finishLevelStage();
@@ -775,7 +782,13 @@ export class Game {
     const W = Math.max(1, this.root.clientWidth);
     const H = Math.max(1, this.root.clientHeight);
     const narrow = W <= 760;
-    const panel = this.mode === 'build' && this.els.panel ? this.els.panel.getBoundingClientRect() : null;
+    // In the wipeout replay / failure card, reserve the result card's space the way the build panel does.
+    const failView = this.mode === 'crash' || this.mode === 'result';
+    const panel = this.mode === 'build' && this.els.panel
+      ? this.els.panel.getBoundingClientRect()
+      : failView
+        ? ({ width: narrow ? W : 400, height: narrow ? H * 0.42 : H } as DOMRect)
+        : null;
     let offX = 0;
     let offY = 0;
     let availW = W;
