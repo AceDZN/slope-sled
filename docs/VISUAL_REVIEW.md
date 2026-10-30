@@ -88,3 +88,26 @@
 - The build panel becomes a bottom sheet, the grid frames itself in the space above, and the GO button shrinks to 78 px.
 - The top pill truncates the level name with an ellipsis.
 - It's playable, but the grid is small. Choice buttons and steppers stay at least 38 px.
+
+## Second pass (AAA polish), 31 Oct 2026
+
+The captures in `docs/visual-review/` were re-taken on the production build at 1672×941 after this pass. The earlier comparison above still describes layout and HUD, which didn't change.
+
+- **Grid board:** the dark glass panel was replaced by a cut-away ice-cliff face, with strata, ice cracks, a snow cap and icicles. The cyan grid reads like it does in mockup 02 and no longer floats in front of the trees.
+- **World:**
+  - Noise-generated snowy terrain, with blue hollows and bright crests and a flat ledge around the course.
+  - A larger Hermon massif with a ragged snowline and grey-blue rock.
+  - Drifting clouds and a sun disc with halo. Stars come out on the night level.
+- **Post-processing:** a subtle bloom on emissive things only (the track rails, the selected segment, ice), plus a color grade: warm highlights, cool shadows and a vignette. If frames are slow, the game drops to plain rendering at DPR 1 automatically.
+- **Track:** a groomed corduroy bed between raised snow berms, with glowing rails on the inner lip. During the ride a snow embankment and chevron boards line it, and there's a kicker at the hut. Every successful run now ends with a hop into the powder beside the hut, where a trick (↑) scores.
+- **Result card:** a style score (snowflakes, tricks, clean landing, top speed) with a personal best per level.
+- **Failure replay:** the camera pulls back to the whole grid beside the result card (it used to crop close to the crash). For joint gaps, both lines are extended (dashed) to where they really cross, labeled ✕ (x, y): the graphical solution of the system.
+- **Lesson cards** (`06-lesson-card.png`): illustrated "new skill" cards in Workbook terms, with an LTR mini-graph.
+- **Level map:**
+  - Difficulty colors on each flag and a legend.
+  - World signs beside their trail, carrying ❄ תרגול (practice) and 🏔 מומחה (expert) once unlocked.
+- **Remaining deviations:**
+  - The kid rides seated, not prone.
+  - The dog runs with a sped-up walk.
+  - There's no motion-blur post effect.
+  - The trail map's summit flags still crowd together a little.
