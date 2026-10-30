@@ -13,6 +13,7 @@ export interface Progress {
   runs: Record<string, number>;
   flakes: number;
   muted: boolean;
+  music: boolean;
   reducedMotion: boolean;
 }
 
@@ -38,7 +39,7 @@ export function starsFor(builds: number, hintUsed: boolean): number {
 }
 
 export function loadProgress(): Progress {
-  const empty: Progress = { stars: {}, best: {}, seenLessons: [], runs: {}, flakes: 0, muted: false, reducedMotion: false };
+  const empty: Progress = { stars: {}, best: {}, seenLessons: [], runs: {}, flakes: 0, muted: false, music: true, reducedMotion: false };
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return empty;

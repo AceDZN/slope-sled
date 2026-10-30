@@ -116,6 +116,7 @@ export class Game {
     root.appendChild(this.hud);
     this.world.scene.add(this.fx.group);
     this.sound.muted = this.progress.muted;
+    this.sound.musicOn = this.progress.music;
     this.world.reducedMotion = this.fx.reduced = this.progress.reducedMotion;
   }
 
@@ -271,6 +272,7 @@ export class Game {
 
   setMode(m: Mode): void {
     this.mode = m;
+    this.sound.setIntensity(m === 'ride' || m === 'swoop' ? 1 : 0);
     if (m === 'select' || m === 'title') this.refreshMap();
     // Hero scale in the wide build/replay views so the kid and dog read like the mockups; true scale while riding.
     const hero = m === 'build' || m === 'title' || m === 'select' ? 2 : 1;
@@ -664,7 +666,10 @@ export class Game {
       cam.updateProjectionMatrix();
       this.camPos.copy(target.pos);
       this.camLook.copy(target.look);
-      if (k >= 1) this.setMode('ride');
+      if (k >= 1) {
+        this.setMode('ride');
+        this.popup('סע!');
+      }
     } else if (this.mode === 'ride') {
       const st = this.sim?.state;
       const crawl = st && st.phase === 'ride' && st.v < 1.6 && Math.tan(st.angle) > -0.06;
@@ -1102,6 +1107,7 @@ export class Game {
       <button class="btn secondary" style="flex:none" data-a="restart">התחלת השלב מחדש</button>
       <button class="btn secondary" style="flex:none" data-a="select">מפת השלבים</button>
       <label class="toggle">צלילים <input type="checkbox" data-t="sound" ${this.sound.muted ? '' : 'checked'}></label>
+      <label class="toggle">מוזיקה <input type="checkbox" data-t="music" ${this.sound.musicOn ? 'checked' : ''}></label>
       <label class="toggle">תנועה מופחתת <input type="checkbox" data-t="motion" ${this.world.reducedMotion ? 'checked' : ''}></label></div></div>`;
   }
 
@@ -1115,6 +1121,7 @@ export class Game {
   // ---------------- input ----------------
   private action(a: string, el: HTMLElement): void {
     this.sound.unlock();
+    this.sound.startMusic();
     const i = Number(el.dataset.i);
     switch (a) {
       case 'play': {
@@ -1181,6 +1188,9 @@ export class Game {
       if (t.dataset.t === 'sound') {
         this.sound.setMuted(!t.checked);
         this.progress.muted = this.sound.muted;
+      } else if (t.dataset.t === 'music') {
+        this.sound.setMusic(t.checked);
+        this.progress.music = t.checked;
       } else if (t.dataset.t === 'motion') {
         this.world.reducedMotion = this.fx.reduced = t.checked;
         this.progress.reducedMotion = t.checked;
@@ -1260,6 +1270,7 @@ export class Game {
 
     window.addEventListener('keydown', (e) => {
       this.sound.unlock();
+      this.sound.startMusic();
       const k = e.key;
       if (k === 'Escape' && this.lesson && this.mode === 'build') return this.closeLesson();
       if (k === 'Escape' || k === 'p' || k === 'P') return this.setPaused(!this.paused);
