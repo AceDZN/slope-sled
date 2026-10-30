@@ -8,6 +8,7 @@ import { equation, num, point, ltr } from '../math/format.ts';
 import type { Labels } from './labels.ts';
 import { COLORS } from './world.ts';
 import type { Assets } from './assets.ts';
+import { cliffFace, corduroy, hash2 } from './textures.ts';
 
 export const SEG_COLORS = [0xff7a1a, 0x35d0ff, 0xb56cff, 0x3ee08f];
 export const SEG_CSS = ['#ff7a1a', '#35d0ff', '#b56cff', '#3ee08f'];
@@ -111,14 +112,8 @@ export class Course {
     const arrowY = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 12), axisMat);
     arrowY.position.set(x0, y1 + 1.4, GRID_Z + 0.02);
     this.gridGroup.add(ax, ay, arrowX, arrowY);
-    // Dark glass behind the grid so cyan lines read over bright snow.
-    const glassMat = new THREE.MeshBasicMaterial({ color: 0x0b2a5a, transparent: true, opacity: 0.26, depthWrite: false });
-    glassMat.userData.base = 0.26;
-    this.gridMats.push(glassMat);
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), glassMat);
-    glass.position.set((x0 + x1) / 2, (y0 + y1) / 2, GRID_Z - 0.05);
-    glass.renderOrder = -1;
-    this.gridGroup.add(glass);
+    // Cut-away cliff face behind the grid: the mountain sliced open so the cyan grid reads clearly.
+    this.buildCliff(x0, x1, y0, y1);
 
     for (let x = Math.ceil(x0 / labelStep) * labelStep; x <= x1; x += labelStep) {
       this.labels.set(`c:gx${x}`, [x, y0 - 0.2, GRID_Z], ltr(num(x)), 'lbl axis-x');
@@ -129,6 +124,47 @@ export class Course {
     }
     this.labels.set('c:ax', [x1 + 1.2, y0 - 2.6, GRID_Z], `${ltr('x →')} <span class="axis-note">גדל משמאל לימין</span>`, 'lbl axis-name');
     this.labels.set('c:ay', [x0 + 0.9, y1 + 1.6, GRID_Z], `${ltr('y')} <span class="axis-note">גובה (מ׳)</span>`, 'lbl axis-name');
+  }
+
+  private buildCliff(x0: number, x1: number, y0: number, y1: number): void {
+    const left = x0 - 4.5, right = x1 + 4.5, bottom = Math.min(y0, 0) - 1.5, top = y1 + 1.6;
+    const w = right - left, h = top - bottom;
+    const tex = cliffFace().clone();
+    tex.needsUpdate = true;
+    tex.repeat.set(w / 40, 1);
+    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0.05, emissive: 0x0a1d44, emissiveIntensity: 0.55, transparent: true, opacity: 1 });
+    face.userData.base = 1;
+    this.gridMats.push(face);
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 2.4), face);
+    wall.position.set((left + right) / 2, (bottom + top) / 2, GRID_Z - 1.25);
+    wall.receiveShadow = true;
+    this.gridGroup.add(wall);
+    // Snow cap: a row of soft lumps along the top edge, slightly overhanging.
+    const capMat = new THREE.MeshStandardMaterial({ color: 0xf7fbff, roughness: 0.8, transparent: true, opacity: 1 });
+    capMat.userData.base = 1;
+    this.gridMats.push(capMat);
+    const lump = new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+    const n = Math.ceil(w / 2.2);
+    for (let i = 0; i <= n; i++) {
+      const m = new THREE.Mesh(lump, capMat);
+      const r = 1.3 + hash2(i, 3) * 0.9;
+      m.scale.set(r * 1.2, 0.55 + hash2(i, 5) * 0.5, 1.7);
+      m.position.set(left + (w * i) / n, top - 0.05, GRID_Z - 1.1);
+      m.castShadow = true;
+      this.gridGroup.add(m);
+    }
+    // Icicles hanging from the cap.
+    const iceMat = new THREE.MeshStandardMaterial({ color: 0xcff3ff, roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.85, emissive: 0x2a7fb0, emissiveIntensity: 0.2 });
+    iceMat.userData.base = 0.85;
+    this.gridMats.push(iceMat);
+    for (let i = 0; i < n * 1.5; i++) {
+      if (hash2(i, 9) < 0.45) continue;
+      const len = 0.5 + hash2(i, 11) * 1.4;
+      const ic = new THREE.Mesh(new THREE.ConeGeometry(0.12, len, 6), iceMat);
+      ic.rotation.x = Math.PI;
+      ic.position.set(left + (w * i) / (n * 1.5), top - len / 2 - 0.05, GRID_Z - 0.05);
+      this.gridGroup.add(ic);
+    }
   }
 
   setGridOpacity(a: number): void {
@@ -452,6 +488,16 @@ export class Course {
       }
       if (o.mode !== 'build' || seg.given) this.embankment(p.line.m, p.line.b, xa, xb, i);
     });
+    if (o.mode === 'ride' && !st.segments[st.segments.length - 1].launch) {
+      // Kicker at the hut: a short lip the sled pops off into the powder.
+      const last = track.pieces[track.pieces.length - 1];
+      const ye = yAt(last.line, last.xb);
+      const kick = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, TRACK_W - 0.4), this.snowMat);
+      kick.position.set(last.xb - 0.7, ye + 0.05, 0);
+      kick.rotation.z = Math.atan(last.line.m) + 0.35;
+      kick.castShadow = kick.receiveShadow = true;
+      this.trackGroup.add(kick);
+    }
     if (o.mode === 'replay' || o.mode === 'ride') {
       for (const j of track.joints) {
         if (j.ok) continue;
@@ -469,17 +515,29 @@ export class Course {
     const yb = m * xb + b;
     const L = Math.max(0.01, Math.hypot(xb - xa, yb - ya));
     const ang = Math.atan2(yb - ya, xb - xa);
-    const body = new THREE.Mesh(new THREE.BoxGeometry(L, 0.42, TRACK_W), opacity < 1 ? std(COLORS.snow, { transparent: true, opacity }) : this.snowMat);
-    body.position.y = -0.21;
-    body.castShadow = true;
-    body.receiveShadow = true;
-    const edgeMat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: selected ? 1.4 : 0.7, transparent: opacity < 1, opacity });
-    for (const z of [-TRACK_W / 2, TRACK_W / 2]) {
-      const e = new THREE.Mesh(new THREE.BoxGeometry(L, 0.09, 0.12), edgeMat);
-      e.position.set(0, 0.0, z);
-      g.add(e);
+    const ghost = opacity < 1;
+    // Groomed corduroy bed.
+    const tex = corduroy().clone();
+    tex.needsUpdate = true;
+    tex.repeat.set(L / 2.2, 1);
+    const bedMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, transparent: ghost, opacity });
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(L, 0.42, TRACK_W - 0.5), bedMat);
+    bed.position.y = -0.21;
+    bed.castShadow = !ghost;
+    bed.receiveShadow = true;
+    g.add(bed);
+    // Raised snow berms on both sides with a glowing rail along the inner lip.
+    const bermMat = ghost ? new THREE.MeshStandardMaterial({ color: COLORS.snow, transparent: true, opacity }) : this.snowMat;
+    const edgeMat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: selected ? 2.4 : 1.5, transparent: ghost, opacity });
+    for (const side of [-1, 1]) {
+      const berm = new THREE.Mesh(new THREE.BoxGeometry(L, 0.62, 0.42), bermMat);
+      berm.position.set(0, -0.12, side * (TRACK_W / 2 - 0.2));
+      berm.castShadow = !ghost;
+      berm.receiveShadow = true;
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(L, 0.07, 0.09), edgeMat);
+      rail.position.set(0, 0.2, side * (TRACK_W / 2 - 0.42));
+      g.add(berm, rail);
     }
-    g.add(body);
     g.position.set((xa + xb) / 2, (ya + yb) / 2, 0);
     g.rotation.z = ang;
     return g;

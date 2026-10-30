@@ -5,6 +5,8 @@ const LOG_KEY = 'slope-sled:log:v1';
 
 export interface Progress {
   stars: Record<number, number>;
+  /** Best style score per level (generated runs: 100 + world). */
+  best: Record<number, number>;
   flakes: number;
   muted: boolean;
   reducedMotion: boolean;
@@ -32,7 +34,7 @@ export function starsFor(builds: number, hintUsed: boolean): number {
 }
 
 export function loadProgress(): Progress {
-  const empty: Progress = { stars: {}, flakes: 0, muted: false, reducedMotion: false };
+  const empty: Progress = { stars: {}, best: {}, flakes: 0, muted: false, reducedMotion: false };
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return empty;

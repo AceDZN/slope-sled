@@ -33,6 +33,7 @@ window.render_game_to_text = () => game.textState();
 /** Deterministic stepping for tests: advances in fixed 1/60 s frames (respects pause). */
 window.advanceTime = (ms: number) => {
   manual = true;
+  game.world.autoQuality = false;
   const steps = Math.max(1, Math.round(ms / (1000 / 60)));
   for (let i = 0; i < steps; i++) game.update(1 / 60);
   game.render();

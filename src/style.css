@@ -231,3 +231,11 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
 .select > * { pointer-events: auto; }
 .select .top { pointer-events: none; }
 .select .top > * { pointer-events: auto; }
+.style { margin-top: 10px; background: linear-gradient(180deg, #2a1a6a, #1a1450); border: 1.5px solid #9b5cff88; border-radius: 14px; padding: 8px 10px; }
+.style-total { font-size: 17px; }
+.style-total b { font-size: 24px; color: var(--gold); }
+.style-total small { opacity: .8; }
+.newbest { background: var(--gold); color: #3a2400; border-radius: 8px; padding: 1px 8px; font-size: 13px; font-weight: 700; animation: pulse 0.8s ease-in-out infinite alternate; }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+.chips-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; font-size: 13px; }
+.chips-row span { background: #ffffff1a; border-radius: 8px; padding: 2px 8px; }

@@ -86,6 +86,11 @@ export class Game {
   leanZ = 0;
   private trickT = -1;
   tricks = 0;
+  /** Finish hop off the kicker at the hut (visual; the math already decided success). */
+  private hop: { t: number; x: number; y: number; vx: number; vy: number; landY: number } | null = null;
+  private hopDone = false;
+  private cleanLanding = false;
+  lastStyle: { total: number; flakes: number; tricks: number; clean: number; speed: number; best: number; isBest: boolean } | null = null;
   flakes = 0;
   private flakeMeshes: THREE.Mesh[] = [];
   private crashT = 0;
@@ -310,6 +315,10 @@ export class Game {
     this.explanation = null;
     this.tricks = 0;
     this.flakes = 0;
+    this.hop = null;
+    this.hopDone = false;
+    this.cleanLanding = false;
+    this.lastStyle = null;
     this.leanZ = 0.2;
     this.leanTarget = 0.2;
     this.trickT = -1;
@@ -347,6 +356,7 @@ export class Game {
 
   private updateRide(dt: number): void {
     const sim = this.sim!;
+    if (this.hop) return this.updateHop(dt);
     const prevPhase = sim.state.phase;
     sim.advance(dt * 1000);
     const s = sim.state;
@@ -412,7 +422,64 @@ export class Game {
     if (sim.outcome && !sim.outcome.ok && sim.outcome.reason === 'stall') {
       this.sound.stall();
       this.onRideEnd(sim.outcome);
-    } else if (sim.outcome && sim.done) this.onRideEnd(sim.outcome);
+    } else if (sim.outcome && sim.done) {
+      if (sim.outcome.ok && !this.hopDone && sim.outcome.airTime === 0) {
+        // Pop off the kicker at the hut: an air moment (and a trick) on every successful run.
+        this.hop = { t: 0, x: s.x, y: s.y + 0.3, vx: Math.max(4, s.v * Math.cos(s.angle)), vy: Math.max(4.2, s.v * 0.32), landY: this.stage.finish.y };
+        this.sound.whoosh();
+        return;
+      }
+      if (sim.outcome.ok && sim.outcome.airTime > 0) this.cleanLanding = this.trickT < 0;
+      this.onRideEnd(sim.outcome);
+    }
+  }
+
+  private updateHop(dt: number): void {
+    const h = this.hop!;
+    h.t += dt;
+    h.vy -= 9.8 * dt;
+    h.x += h.vx * dt;
+    h.y += h.vy * dt;
+    this.leanZ += (this.leanTarget - this.leanZ) * Math.min(1, dt * 6);
+    this.placeRiderAt(h.x, h.y, Math.atan2(h.vy, h.vx) * 0.45, this.leanZ);
+    this.rider.setPose('ride');
+    if (this.trickT >= 0) {
+      this.trickT += dt;
+      const k = Math.min(1, this.trickT / 0.6);
+      this.rider.body.rotation.z = k * Math.PI * 2;
+      if (k >= 1) {
+        this.trickT = -1;
+        this.rider.body.rotation.z = 0;
+      }
+    }
+    const d = this.dog.root.position;
+    d.x += (h.x - 1.4 - d.x) * Math.min(1, dt * 5);
+    this.sound.wind(Math.hypot(h.vx, h.vy) * 0.6);
+    this.updateRideHud();
+    if (h.y <= h.landY && h.vy < 0) {
+      this.placeRiderAt(h.x, h.landY, 0, this.leanZ);
+      this.cleanLanding = this.trickT < 0;
+      if (!this.cleanLanding) this.popup('נחיתה מתנדנדת!');
+      this.rider.body.rotation.z = 0;
+      this.trickT = -1;
+      this.hop = null;
+      this.hopDone = true;
+      this.onRideEnd(this.sim!.outcome!);
+    }
+  }
+
+  private computeStyle(): void {
+    if (!this.outcome?.ok) return;
+    const flakes = this.flakes * 10;
+    const tricks = this.tricks * 50;
+    const clean = this.cleanLanding ? (this.tricks > 0 ? 40 : 20) : 0;
+    const speed = Math.round((this.outcome.maxSpeed ?? 0) * 3.6);
+    const total = flakes + tricks + clean + speed;
+    const key = this.generated ? 100 + this.level.world : this.level.id;
+    const best = Math.max(total, this.progress.best[key] ?? 0);
+    const isBest = total > (this.progress.best[key] ?? 0);
+    this.progress.best[key] = best;
+    this.lastStyle = { total, flakes, tricks, clean, speed, best, isBest };
   }
 
   private onRideEnd(o: RideOutcome): void {
@@ -439,6 +506,7 @@ export class Game {
       this.fx.burst(this.rider.root.position.clone(), 0.5);
       this.popup(CHEERS[this.level.id % CHEERS.length]);
       this.progress.flakes += this.flakes;
+      this.computeStyle();
       this.setMode('crash'); // reuse the slow orbit for a short celebration
       this.timeScale = 1;
     } else {
@@ -581,7 +649,7 @@ export class Game {
     this.course.update(dtReal);
     this.world.update(dtReal);
     this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.mode === 'select' || this.mode === 'title' ? this.map.cameraPose(0).look : this.viewCenter());
-    if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title' || this.mode === 'select';
+    if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title' || this.mode === 'select' || (this.mode === 'result' && !!this.outcome?.ok);
     this.labels.only = this.mode === 'select' ? ['map:'] : [];
   }
 
@@ -903,6 +971,8 @@ export class Game {
         ${last ? `<div class="bigstars">${stars}</div>` : ''}
         <div class="box"><div class="txt">המסלול שלכם:${this.params.map((p, i) => `<div class="eqrow"><span class="seg-tag" style="--c:${SEG_CSS[i % 4]}">${i + 1}</span> ${ltr(equation(p.m, p.b))}</div>`).join('')}
         <div class="meta" style="color:#4b5b80">ניסיונות: ${ltr(String(this.builds))}${this.hintUsed ? ' · השתמשתם ברמז' : ''} · ❄ ${ltr(String(this.flakes))}${this.tricks ? ` · טריקים: ${ltr(String(this.tricks))}` : ''}</div></div></div>
+        ${this.lastStyle ? `<div class="style"><div class="style-total">ניקוד סגנון <b>${ltr(String(this.lastStyle.total))}</b>${this.lastStyle.isBest ? ' <span class="newbest">שיא חדש!</span>' : ` <small>שיא: ${ltr(String(this.lastStyle.best))}</small>`}</div>
+          <div class="chips-row"><span>❄ ${ltr('+' + this.lastStyle.flakes)}</span><span>★ טריקים ${ltr('+' + this.lastStyle.tricks)}</span><span>🛬 נחיתה ${ltr('+' + this.lastStyle.clean)}</span><span>💨 מהירות ${ltr('+' + this.lastStyle.speed)}</span></div></div>` : ''}
         <div class="btns"><button class="btn primary" data-a="next">${nextLabel}</button><button class="btn secondary" data-a="retry">שוב</button></div></div>`;
     }
     const rows = ex.rows.map(([l, v, tone]) => `<div><span>${l}</span><span class="${tone}">${v}</span></div>`).join('');
@@ -1034,7 +1104,7 @@ export class Game {
 
   private trick(): void {
     if (this.mode !== 'ride' || !this.sim) return;
-    if (this.sim.state.phase === 'air' && this.trickT < 0) {
+    if ((this.sim.state.phase === 'air' || this.hop) && this.trickT < 0) {
       this.trickT = 0;
       this.tricks++;
       this.sound.trick();
