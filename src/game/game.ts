@@ -665,6 +665,11 @@ export class Game {
       }
     }
     if (this.mode === 'build' && this.els.choices && !narrow) availH -= 90;
+    const left = this.mode === 'build' && this.els.leftcard && !narrow ? this.els.leftcard.getBoundingClientRect() : null;
+    if (left && left.height > 0) {
+      availH -= left.height + 10;
+      offY += (left.height + 10) / 2;
+    }
     const v = this.level.view;
     const bw = v.x1 - v.x0 + 16;
     const bh = v.y1 - v.y0 + 6;
@@ -750,9 +755,9 @@ export class Game {
       html += `<div class="panel" data-el="panel"><h2>מקטעים</h2>${st.segments.map((s, i) => this.cardHtml(i)).join('')}</div>`;
     }
     if (st.table) {
-      html += `<div class="table-card"><h3>הטבלה של המדריך</h3><table><tr><th>x</th>${st.table.xs.map((x) => `<td>${num(x)}</td>`).join('')}</tr><tr><th>y</th>${st.table.ys.map((y) => `<td>${num(y)}</td>`).join('')}</tr></table></div>`;
+      html += `<div class="table-card" data-el="leftcard"><h3>הטבלה של המדריך</h3><table><tr><th>x</th>${st.table.xs.map((x) => `<td>${num(x)}</td>`).join('')}</tr><tr><th>y</th>${st.table.ys.map((y) => `<td>${num(y)}</td>`).join('')}</tr></table></div>`;
     }
-    if (st.shapeGraph) html += `<div class="shape-card"><h3>גרף הגובה של המאמן</h3>${this.shapeSvg(st.shapeGraph)}</div>`;
+    if (st.shapeGraph) html += `<div class="shape-card" data-el="leftcard"><h3>גרף הגובה של המאמן <small style="font-weight:500;color:#5b6b90">(צורה בלבד)</small></h3>${this.shapeSvg(st.shapeGraph)}</div>`;
     html += `<button class="go" data-a="go" data-el="go">סע!<small>${ltr('Enter')}</small></button>`;
     return html;
   }
@@ -765,7 +770,9 @@ export class Game {
     const sx = (x: number) => P + ((x - x0) / (x1 - x0 || 1)) * (W - 2 * P);
     const sy = (y: number) => H - P - ((y - y0) / (y1 - y0 || 1)) * (H - 2 * P);
     const poly = pts.map((p) => `${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' ');
-    const dots = pts.map((p) => `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="3.5" fill="#ff7a1a"/><text x="${sx(p[0])}" y="${sy(p[1]) - 7}" font-size="10" text-anchor="middle" fill="#12203f">(${num(p[0])}, ${num(p[1])})</text>`).join('');
+    // Schematic only (shape, not scale): dots without coordinates, plus axis names.
+    const dots = pts.map((p) => `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="3.5" fill="#ff7a1a"/>`).join('') +
+      `<text x="${W - 8}" y="${H - P + 13}" font-size="11" fill="#4b5b80">x</text><text x="${P - 12}" y="12" font-size="11" fill="#4b5b80">y</text>`;
     return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" direction="ltr"><line x1="${P}" y1="${H - P}" x2="${W - 4}" y2="${H - P}" stroke="#8aa" /><line x1="${P}" y1="${H - P}" x2="${P}" y2="4" stroke="#8aa"/><polyline points="${poly}" fill="none" stroke="#1f62d6" stroke-width="3"/>${dots}</svg>`;
   }
 

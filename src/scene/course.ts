@@ -155,7 +155,8 @@ export class Course {
       const band = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(0.4, z1 - z0), lv.view.y1 - lv.view.y0), m);
       band.position.set((z0 + z1) / 2, (lv.view.y0 + lv.view.y1) / 2, GRID_Z + 0.03);
       this.gridGroup.add(band);
-      this.labels.set(`c:jz${i}`, [(z0 + z1) / 2, lv.view.y1 - 0.6, GRID_Z], `🔩 אזור חיבור ${ltr(`${num(z0)} ≤ x ≤ ${num(z1)}`)}`, 'lbl joint-zone');
+      const many = st.joints.length > 1;
+      this.labels.set(`c:jz${i}`, [(z0 + z1) / 2, lv.view.y1 - 0.6 - (i % 2) * 2.2, GRID_Z], `🔩 ${many ? '' : 'אזור חיבור '}${ltr(`${num(z0)} ≤ x ≤ ${num(z1)}`)}`, 'lbl joint-zone');
     });
     this.buildFinish();
     if (st.rival) this.buildRival();
