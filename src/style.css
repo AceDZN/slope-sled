@@ -201,3 +201,6 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
 
 .flag.fresh { background: #e8f6ff; box-shadow: 0 3px 0 #7fb6d8; }
 .flag.fresh .n { background: var(--ice); }
+.chips { display: flex; gap: 6px; flex: 1; justify-content: flex-start; direction: ltr; flex-wrap: wrap; }
+.chip { min-width: 52px; padding: 8px 6px; border-radius: 10px; background: linear-gradient(180deg, #ffffff, #d6e5ff); color: var(--ink); font-size: 18px; font-weight: 700; box-shadow: 0 3px 0 #8aa7d6; border: 2px solid transparent; }
+.chip.on { border-color: var(--orange); background: linear-gradient(180deg, #fff6ea, #ffd9b0); }

@@ -19,7 +19,7 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-await page.goto('http://localhost:5215/');
+await page.goto(process.env.URL ?? 'http://localhost:5215/');
 await page.waitForFunction(() => !document.getElementById('boot'));
 const st = async () => JSON.parse(await page.evaluate(() => window.render_game_to_text()));
 const adv = (ms) => page.evaluate((m) => window.advanceTime(m), ms);

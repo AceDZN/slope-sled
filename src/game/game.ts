@@ -229,7 +229,7 @@ export class Game {
     const spec = this.stage.segments[seg][key];
     if (!editable(spec) || this.stage.segments[seg].given) return;
     let v = value;
-    if (spec.choices) v = value;
+    if (spec.choices) v = spec.choices.reduce((a, c) => (Math.abs(c - value) < Math.abs(a - value) ? c : a), spec.choices[0]);
     else {
       v = snap(v, spec.step ?? (key === 'm' ? 0.05 : 0.5));
       v = Math.min(spec.max ?? (key === 'm' ? 3 : 60), Math.max(spec.min ?? (key === 'm' ? -3 : -20), v));
@@ -756,7 +756,10 @@ export class Game {
     return `<div class="card ${given ? 'given' : ''}" data-a="sel" data-i="${i}" style="--c:${c}" data-el="card${i}">
       <div class="head"><div class="num">${i + 1}</div><div class="eq" data-el="eq${i}"></div></div>
       ${s.name ? `<div class="name">${s.name}${given ? ' · נתון' : ''}</div>` : given ? '<div class="name">מקטע נתון</div>' : ''}
-      ${mEd ? `<div class="row"><div class="lab">שיפוע ${ltr('m')}<small>${ltr('Δy / Δx')}</small></div>
+      ${mEd && s.m.choices ? `<div class="row"><div class="lab">שיפוע ${ltr('m')}</div><div class="chips">${s.m.choices
+        .map((c) => `<button class="chip" data-a="choice" data-i="${i}" data-v="${c}">${ltr(c > 0 ? '+' + num(c) : num(c))}</button>`)
+        .join('')}</div></div>` : ''}
+      ${mEd && !s.m.choices ? `<div class="row"><div class="lab">שיפוע ${ltr('m')}<small>${ltr('Δy / Δx')}</small></div>
         <div class="knob" data-knob="${i}"><i data-el="knob${i}"></i></div>
         <button class="step" data-a="m-" data-i="${i}" aria-label="הקטנת שיפוע">−</button><div class="val" data-el="mv${i}"></div><button class="step" data-a="m+" data-i="${i}" aria-label="הגדלת שיפוע">+</button></div>
         <div class="row"><div class="riserun" data-el="rr${i}"></div></div>
@@ -793,7 +796,10 @@ export class Game {
       const slider = this.hud.querySelector<HTMLInputElement>(`input[data-slider="m"][data-i="${i}"]`);
       if (slider && document.activeElement !== slider) slider.value = String(p.m);
     });
-    this.hud.querySelectorAll<HTMLElement>('.choice').forEach((b) => b.classList.toggle('on', this.chosen[0] && Number(b.dataset.v) === this.params[0].m));
+    this.hud.querySelectorAll<HTMLElement>('.choice, .chip').forEach((b) => {
+      const j = b.dataset.i === undefined ? 0 : Number(b.dataset.i);
+      b.classList.toggle('on', this.chosen[j] && Number(b.dataset.v) === this.params[j].m);
+    });
     const go = this.els.go as HTMLButtonElement | undefined;
     if (go) go.disabled = !this.chosen.every(Boolean);
     if (go) go.style.opacity = this.chosen.every(Boolean) ? '1' : '0.55';
@@ -930,7 +936,7 @@ export class Game {
         break;
       case 'hint': this.useHint(); break;
       case 'go': this.go(); break;
-      case 'choice': this.setParam(0, 'm', Number(el.dataset.v)); break;
+      case 'choice': this.selected = Number.isNaN(i) ? 0 : i; this.setParam(this.selected, 'm', Number(el.dataset.v)); break;
       case 'sel': this.selectSeg(i); break;
       case 'm-': this.selected = i; this.nudge('m', -1); break;
       case 'm+': this.selected = i; this.nudge('m', 1); break;

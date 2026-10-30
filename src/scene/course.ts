@@ -176,16 +176,19 @@ export class Course {
     const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.7, bevelEnabled: true, bevelSize: 0.12, bevelThickness: 0.12, bevelSegments: 2, curveSegments: 24 });
     geo.rotateY(-Math.PI / 2);
     geo.translate(g.x + 0.35, 0, 0);
-    const mat = std(COLORS.ice, { transparent: true, opacity: 0.72, roughness: 0.15, metalness: 0.1, emissive: 0x1b5f86, emissiveIntensity: 0.35 });
+    const mat = std(COLORS.ice, { transparent: true, opacity: 0.5, roughness: 0.15, metalness: 0.1, emissive: 0x1b5f86, emissiveIntensity: 0.35 });
     const wall = new THREE.Mesh(geo, mat);
     wall.castShadow = true;
     wall.receiveShadow = true;
     wall.userData.gate = g.id;
     this.staticGroup.add(wall);
     // A glowing ring marks the target point on the grid.
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.07, 8, 32), new THREE.MeshBasicMaterial({ color: COLORS.gold }));
-    ring.position.set(g.x, g.y, GRID_Z + 0.06);
-    this.gridGroup.add(ring);
+    if (!g.hideLabel) {
+      // A glowing ring marks the target point on the grid (not on transfer levels, where only the table gives it).
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.07, 8, 32), new THREE.MeshBasicMaterial({ color: COLORS.gold }));
+      ring.position.set(g.x, g.y, GRID_Z + 0.06);
+      this.gridGroup.add(ring);
+    }
     if (g.look === 'flag' || g.look === 'meet') {
       for (const z of [-2.1, 2.1]) {
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, top + 1.6, 6), std(0xdddddd));
