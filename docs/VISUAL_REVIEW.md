@@ -73,7 +73,8 @@
 - **Now:** a 3D diorama of Hermon, viewed from an elevated angle, with a glowing trail that zig-zags from the hut at the foot (level 1) up to the summit (level 18). Each level is a 3D flag colored by state: green done, blue glowing current, grey locked. Clickable flag labels show the number or a padlock plus gold stars. The four worlds have wooden signs.
 - **Kept from the target:** the total stars and snowflakes pill, a big orange "שחקו" button (bottom-left) and a "השלב הבא" info card. ❄ "ריצה חדשה" buttons appear once a world's transfer level is cleared.
 - A collapsible "רשימת שלבים" list keeps every level reachable by keyboard and on small screens.
-- **Remaining deviation:** no kid standing at the current flag, and the summit flags crowd together a little at this camera angle.
+- The kid (cheering), the sled and the dog wait at the current flag, as in the target.
+- **Remaining deviation:** the summit flags crowd together a little at this camera angle, and the terrain is plainer than the mockup's painted diorama.
 
 ## Typography and RTL
 
