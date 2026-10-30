@@ -78,10 +78,32 @@ for (const [id, stages] of Object.entries(SOL)) {
     s = await st();
     outcome = s.outcome;
     if (si === stages.length - 1 || outcome !== 'success') {
-      await page.screenshot({ path: `${out}/L${id}-result.png` });
+      if (process.env.SHOTS) await page.screenshot({ path: `${out}/L${id}-result.png` });
       const r = { id: Number(id), stage: si + 1, outcome, rideTime: s.ride?.t, params: s.segments.map((x) => x.equation), explanation: outcome === 'success' ? '' : s.explanation };
       results.push(r);
       console.log('RESULT', JSON.stringify(r));
+      if (process.env.WRONG && outcome === 'success') {
+        // Retry, then break the slope of the selected segment on purpose and ride again.
+        await page.keyboard.press('r');
+        await adv(200);
+        s = await st();
+        const sel = s.segments[s.selectedSegment - 1];
+        if (sel?.editable.m && !sel.choices) {
+          for (let p = 0; p < 5; p++) await page.keyboard.press('ArrowUp');
+        } else if (sel?.editable.b) {
+          for (let p = 0; p < 3; p++) await page.keyboard.press('ArrowRight');
+        } else if (sel?.choices) {
+          await page.keyboard.press('ArrowUp');
+        }
+        await adv(100);
+        s = await st();
+        const eqs = s.segments.map((x) => x.equation);
+        await page.keyboard.press('Enter');
+        for (let i = 0; i < 60 && (await st()).mode !== 'result'; i++) await adv(500);
+        s = await st();
+        await page.screenshot({ path: `${out}/L${id}-wrong.png` });
+        console.log('WRONG', JSON.stringify({ id: Number(id), outcome: s.outcome, params: eqs, explanation: s.explanation }));
+      }
       break;
     }
     await page.click('[data-a=next]');

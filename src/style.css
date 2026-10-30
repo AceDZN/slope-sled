@@ -178,7 +178,8 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
   .panel h2 { display: none; }
   .go { width: 72px; height: 72px; font-size: 24px; bottom: calc(42% + 16px); left: auto; right: 10px; border-width: 4px; }
   .go small { display: none; }
-  .tr { left: 120px; justify-content: flex-start; }
+  .tr { left: 162px; justify-content: flex-start; }
+  .tl { gap: 6px; }
   .pill { padding: 6px 10px; gap: 6px; min-width: 0; flex: 1; }
   .pill .lvname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
   .stars { font-size: 16px; }
