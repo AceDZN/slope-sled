@@ -11,7 +11,7 @@ import type { Assets } from './assets.ts';
 
 export const SEG_COLORS = [0xff7a1a, 0x35d0ff, 0xb56cff, 0x3ee08f];
 export const SEG_CSS = ['#ff7a1a', '#35d0ff', '#b56cff', '#3ee08f'];
-export const TRACK_W = 2.4;
+export const TRACK_W = 3.4;
 export const GRID_Z = -1.6;
 export const RIVAL_Z = -3.6;
 
@@ -521,7 +521,7 @@ export class Course {
       const y = m * x + b;
       const side = (i + segIndex) % 2 ? 1 : -1;
       const board = this.chevron.clone();
-      board.position.set(x, y + 0.55, side * (TRACK_W / 2 + 0.35));
+      board.position.set(x, y + 0.2, side * (TRACK_W / 2 + 0.9));
       this.trackGroup.add(board);
     }
   }
@@ -553,7 +553,7 @@ export class Course {
     const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 });
     mat.userData.shared = true;
     const g = new THREE.Group();
-    const board = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), mat);
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), mat);
     board.rotation.y = -Math.PI / 2;
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 5), this.woodMat);
     post.position.y = -0.4;

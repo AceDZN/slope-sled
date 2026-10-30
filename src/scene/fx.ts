@@ -100,10 +100,10 @@ export class Fx {
     }
   }
 
-  sparkles(at: THREE.Vector3, count = 140): void {
+  sparkles(at: THREE.Vector3, count = 140, size = 0.5): void {
     for (let i = 0; i < (this.reduced ? count / 3 : count); i++) {
-      this.v.set((Math.random() - 0.5) * 7, 4 + Math.random() * 6, (Math.random() - 0.5) * 7);
-      this.sparkle.emit(at, this.v, 1.5, 1.8, 0.5);
+      this.v.set((Math.random() - 0.5) * 7, 4 + Math.random() * 6, (Math.random() - 0.5) * 7).multiplyScalar(size < 0.3 ? 0.4 : 1);
+      this.sparkle.emit(at, this.v, 1.5, size < 0.3 ? 0.8 : 1.8, size);
     }
   }
 

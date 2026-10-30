@@ -284,8 +284,8 @@ export class Game {
     this.explanation = null;
     this.tricks = 0;
     this.flakes = 0;
-    this.leanZ = 0;
-    this.leanTarget = 0;
+    this.leanZ = 0.2;
+    this.leanTarget = 0.2;
     this.trickT = -1;
     this.finishFx = false;
     this.passedGates.clear();
@@ -310,7 +310,7 @@ export class Game {
     const mat = new THREE.MeshStandardMaterial({ color: 0xbff4ff, emissive: 0x5fd8ff, emissiveIntensity: 1.2, metalness: 0.2, roughness: 0.2 });
     let k = 0;
     for (let x = tr.x0 + 5; x < tr.x1 - 2; x += 3.2) {
-      const z = [0, -0.7, -0.7, 0, 0.7, 0.7][k++ % 6];
+      const z = [0.2, -0.6, -0.6, 0.2, 1.0, 1.0][k++ % 6];
       const m = new THREE.Mesh(geo, mat);
       m.position.set(x, trackY(tr, x) + 0.75, z);
       m.userData.alive = true;
@@ -350,7 +350,7 @@ export class Game {
       const tx = s.x - 1.1;
       d.x += (tx - d.x) * Math.min(1, dt * 5);
       d.y = air ? d.y : trackY(sim.judgement.track, Math.max(sim.judgement.track.x0, d.x));
-      d.z = 0.95;
+      d.z = -1.25;
       this.dog.root.rotation.set(0, 0, s.angle);
     }
     // Snowflakes collected by lean.
@@ -363,7 +363,7 @@ export class Game {
           f.visible = false;
           this.flakes++;
           this.sound.tick(true);
-          this.fx.sparkles(f.position.clone(), 12);
+          this.fx.sparkles(f.position.clone(), 10, 0.18);
         }
       }
     }
@@ -919,7 +919,7 @@ export class Game {
       case 'retry': this.sound.click(); this.backToBuild(); break;
       case 'next': this.sound.click(); this.next(); break;
       case 'trick': this.trick(); break;
-      case 'lean': this.leanTarget = this.leanTarget > 0 ? -0.7 : 0.7; break;
+      case 'lean': this.leanTarget = this.leanTarget > 0.3 ? -0.6 : 1.0; break;
     }
   }
 
@@ -1055,8 +1055,8 @@ export class Game {
         }
       } else if (this.mode === 'ride' || this.mode === 'swoop') {
         if (k === ' ' || k === 'ArrowDown') { this.tuck = true; e.preventDefault(); }
-        if (k === 'ArrowLeft') this.leanTarget = -0.7;
-        if (k === 'ArrowRight') this.leanTarget = 0.7;
+        if (k === 'ArrowLeft') this.leanTarget = -0.6;
+        if (k === 'ArrowRight') this.leanTarget = 1.0;
         if (k === 'ArrowUp' || k === 'x' || k === 'X') { this.trick(); e.preventDefault(); }
       } else if (this.mode === 'result') {
         if (k === 'Enter') this.action(this.outcome?.ok ? 'next' : 'retry', this.hud);
@@ -1066,7 +1066,7 @@ export class Game {
     });
     window.addEventListener('keyup', (e) => {
       if (e.key === ' ' || e.key === 'ArrowDown') this.tuck = false;
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') this.leanTarget = 0;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') this.leanTarget = 0.2;
     });
   }
 

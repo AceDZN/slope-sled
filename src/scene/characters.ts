@@ -33,15 +33,17 @@ class Animator {
   has(pose: string): boolean {
     return this.actions.has(pose);
   }
-  play(pose: string, once = false, fade = 0.25): boolean {
+  /** hold: jump to the clip's last frame and stay there (e.g. seated at the end of "sit"). */
+  play(pose: string, once = false, fade = 0.25, hold = false): boolean {
     const a = this.actions.get(pose);
     if (!a) return false;
     if (this.current === pose) return true;
     const prev = this.actions.get(this.current);
     a.reset();
-    a.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
-    a.clampWhenFinished = once;
+    a.setLoop(once || hold ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    a.clampWhenFinished = once || hold;
     a.enabled = true;
+    if (hold) a.time = a.getClip().duration - 0.05;
     a.fadeIn(fade).play();
     prev?.fadeOut(fade);
     this.current = pose;
@@ -74,7 +76,7 @@ export class Rider {
     const c = assets.clone('sledder');
     this.usingTripo = !!c;
     if (c) {
-      this.kid = normalize(c, { height: 1.45 });
+      this.kid = normalize(c, { height: 1.6 });
       // glTF characters face +z; our forward is +x.
       this.kid.rotation.y = Math.PI / 2;
       this.anim = new Animator(c, assets.clips('sledder'), {
@@ -142,7 +144,7 @@ export class Rider {
     this.pose = p;
     if (p === 'cheer') this.anim.play('cheer', false) || this.anim.play('idle');
     else if (p === 'fall') this.anim.play('fall', true) || this.anim.play('idle');
-    else this.anim.has('sit') ? this.anim.play('sit') : this.anim.play('idle');
+    else this.anim.has('sit') ? this.anim.play('sit', false, 0.2, true) : this.anim.play('idle');
   }
 
   /** Is the kid seated (bones overridden after the mixer)? */
@@ -184,6 +186,7 @@ export class Dog {
   private legs: THREE.Object3D[] = [];
   private t = 0;
   pose: DogPose = 'idle';
+  private still = false;
   readonly usingTripo: boolean;
 
   constructor(assets: Assets) {
@@ -191,7 +194,8 @@ export class Dog {
     this.usingTripo = !!c;
     if (c) {
       this.model = normalize(c, { height: 0.75 });
-      this.model.rotation.y = Math.PI / 2;
+      // The Tripo dog's head points to −x; our forward is +x.
+      this.model.rotation.y = Math.PI;
       this.anim = new Animator(c, assets.clips('dog'), {
         idle: ['idle', 'stand', 'breath'],
         run: ['run', 'gallop', 'trot', 'walk'],
@@ -242,12 +246,16 @@ export class Dog {
 
   setPose(p: DogPose): void {
     this.pose = p;
-    if (!this.anim.play(p)) this.anim.play(p === 'jump' ? 'run' : p === 'sit' ? 'idle' : p);
+    if (!this.anim.play(p)) {
+      // Only a walk cycle exists: sped up for run/jump, frozen for idle/sit.
+      this.anim.play('run');
+    }
+    this.still = p === 'idle' || p === 'sit';
   }
 
   update(dt: number, speed: number): void {
     this.t += dt;
-    this.anim.update(dt * (this.pose === 'run' ? Math.min(2.2, 0.7 + speed / 8) : 1));
+    this.anim.update(this.still ? 0 : dt * (this.pose === 'run' || this.pose === 'jump' ? Math.min(2.4, 1.2 + speed / 10) : 1));
     if (!this.usingTripo) {
       const k = this.pose === 'run' ? 1 : 0;
       this.legs.forEach((l, i) => (l.rotation.z = Math.sin(this.t * 16 + (i % 2) * Math.PI + (i > 1 ? 1.2 : 0)) * 0.7 * k));
