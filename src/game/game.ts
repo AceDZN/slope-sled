@@ -784,10 +784,13 @@ export class Game {
     const narrow = W <= 760;
     // In the wipeout replay / failure card, reserve the result card's space the way the build panel does.
     const failView = this.mode === 'crash' || this.mode === 'result';
+    const card = failView ? this.hud.querySelector('.result')?.getBoundingClientRect() : null;
     const panel = this.mode === 'build' && this.els.panel
       ? this.els.panel.getBoundingClientRect()
       : failView
-        ? ({ width: narrow ? W : 400, height: narrow ? H * 0.42 : H } as DOMRect)
+        ? card && card.width > 0
+          ? card
+          : ({ width: narrow ? W : 380, height: narrow ? H * 0.42 : H } as DOMRect)
         : null;
     let offX = 0;
     let offY = 0;
@@ -809,8 +812,8 @@ export class Game {
       offY += (left.height + 10) / 2;
     }
     const v = this.level.view;
-    const bw = v.x1 - v.x0 + 16;
-    const bh = v.y1 - v.y0 + 6;
+    const bw = v.x1 - v.x0 + (failView ? 10 : 16);
+    const bh = v.y1 - v.y0 + (failView ? 4 : 6);
     const fov = 40;
     const t = Math.tan(THREE.MathUtils.degToRad(fov / 2));
     const aspect = Math.max(0.3, availW / Math.max(1, availH));

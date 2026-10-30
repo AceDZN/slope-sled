@@ -513,6 +513,25 @@ export class Course {
     if (o.mode === 'replay' || o.mode === 'ride') {
       for (const j of track.joints) {
         if (j.ok) continue;
+        if (o.mode === 'replay' && j.solution.kind === 'one') {
+          // Show the graphical solution: both lines extended (dashed) to where they really cross.
+          const X = j.solution.x, Y = j.solution.y;
+          const { y0, y1 } = this.level.view;
+          for (const p of [track.pieces[j.index], track.pieces[j.index + 1]]) {
+            const from = j.x;
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.Float32BufferAttribute([from, yAt(p.line, from) + 0.05, TRACK_W / 2 + 0.3, X, yAt(p.line, X) + 0.05, TRACK_W / 2 + 0.3], 3));
+            const line = new THREE.Line(g, new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.5, gapSize: 0.3 }));
+            line.computeLineDistances();
+            this.trackGroup.add(line);
+          }
+          if (Y >= y0 - 4 && Y <= y1 + 4) {
+            const dot = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            dot.position.set(X, Y, TRACK_W / 2 + 0.3);
+            this.trackGroup.add(dot);
+            this.labels.set(`c:tx${j.index}`, [X, Y + 1.3, GRID_Z], `✕ ${ltr(point(Number(X.toFixed(2)), Number(Y.toFixed(2))))}`, 'lbl pt cross-pt');
+          }
+        }
         // Broken joint: a jagged crack where the lines fail to meet.
         const crack = new THREE.Mesh(new THREE.OctahedronGeometry(0.6), new THREE.MeshBasicMaterial({ color: COLORS.danger }));
         crack.position.set(j.x, (j.yLeft + j.yRight) / 2, 0);
