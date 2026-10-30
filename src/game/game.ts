@@ -717,7 +717,7 @@ export class Game {
     let html = `<div class="goal">${st.brief ? `<span class="brief">${st.brief}</span>` : ''}${lv.goal}</div>`;
     if (this.hintOn && st.hint) html += `<div class="hint-text">💡 ${st.hint.text}</div>`;
     const choiceSeg = st.segments.findIndex((s) => s.m.choices);
-    if (choiceSeg >= 0 && st.segments.length === 1) {
+    if (choiceSeg >= 0 && st.segments.length === 1 && st.segments[0].b.fixed !== undefined) {
       const s = st.segments[choiceSeg];
       html += `<div class="choices" data-el="choices"><p>בחרו את השיפוע של המסלול:</p><div class="opts">${s.m.choices!
         .map((c) => `<button class="choice" data-a="choice" data-v="${c}">${ltr(c === 0.5 ? '+½' : c === -0.5 ? '−½' : num(c))}</button>`)
