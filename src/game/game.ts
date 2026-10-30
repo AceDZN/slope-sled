@@ -212,6 +212,7 @@ export class Game {
 
   setMode(m: Mode): void {
     this.mode = m;
+    if (this.course) this.course.rideScenery.visible = m === 'ride' || m === 'swoop' || (m === 'crash' && !!this.outcome?.ok);
     this.modeT = 0;
     this.renderHud();
   }
@@ -362,7 +363,7 @@ export class Game {
           f.visible = false;
           this.flakes++;
           this.sound.tick(true);
-          this.fx.sparkles(f.position.clone());
+          this.fx.sparkles(f.position.clone(), 12);
         }
       }
     }
@@ -381,8 +382,11 @@ export class Game {
     this.updateRideHud();
 
     if (s.phase === 'air' && prevPhase !== 'air') this.sound.whoosh();
-    if (sim.outcome && sim.done) this.onRideEnd(sim.outcome);
-    else if (sim.outcome && !sim.outcome.ok && sim.outcome.reason === 'stall' && prevPhase === 'ride') this.sound.stall();
+    // A stall ends the ride at once; the slide back plays on in the replay.
+    if (sim.outcome && !sim.outcome.ok && sim.outcome.reason === 'stall') {
+      this.sound.stall();
+      this.onRideEnd(sim.outcome);
+    } else if (sim.outcome && sim.done) this.onRideEnd(sim.outcome);
   }
 
   private onRideEnd(o: RideOutcome): void {
@@ -441,7 +445,7 @@ export class Game {
 
   private finishLevelStage(): void {
     const last = this.stageIdx === this.level.stages.length - 1;
-    if (last) {
+    if (last && this.outcome?.ok) {
       const stars = starsFor(this.builds, this.hintUsed);
       this.lastStars = stars;
       const prev = this.progress.stars[this.level.id] ?? 0;
@@ -509,7 +513,7 @@ export class Game {
     } else if (this.mode === 'ride') {
       this.updateRide(dt);
       const t = this.chasePose();
-      const lag = Math.min(1, dtReal * 4);
+      const lag = Math.min(1, dtReal * 9);
       this.camPos.lerp(t.pos, lag);
       this.camLook.lerp(t.look, Math.min(1, dtReal * 6));
       cam.position.copy(this.camPos);
@@ -572,7 +576,7 @@ export class Game {
     this.course.setGridOpacity(k);
     this.labels.hidden = k < 0.5;
     const c = this.crashAt;
-    const side = new THREE.Vector3(c.x - 3, c.y + 4, 24);
+    const side = new THREE.Vector3(c.x - 3, c.y + 5, 30);
     cam.position.lerp(side, Math.min(1, dtReal * 2.2));
     this.camLook.lerp(new THREE.Vector3(c.x, c.y, 0), Math.min(1, dtReal * 3));
     cam.lookAt(this.camLook);
@@ -588,9 +592,10 @@ export class Game {
     const p = this.rider.root.position;
     const s = this.sim?.state;
     const a = s && s.phase !== 'air' ? s.angle : 0;
-    const back = 7.2;
-    const pos = new THREE.Vector3(p.x - back * Math.cos(a), p.y - back * Math.sin(a) + 3.0, 2.4);
-    const look = new THREE.Vector3(p.x + 6 * Math.cos(a), p.y + 6 * Math.sin(a) + 0.6, -0.3);
+    // Low and close behind-left, looking far ahead so the horizon stays in frame.
+    const back = 4.6;
+    const pos = new THREE.Vector3(p.x - back * Math.cos(a), p.y - back * Math.sin(a) + 1.7, 1.5);
+    const look = new THREE.Vector3(p.x + 12 * Math.cos(a * 0.6), p.y + 12 * Math.sin(a * 0.6) + 0.4, -0.6);
     return { pos, look };
   }
 
@@ -621,14 +626,14 @@ export class Game {
     }
     if (this.mode === 'build' && this.els.choices && !narrow) availH -= 90;
     const v = this.level.view;
-    const bw = v.x1 - v.x0 + 9;
+    const bw = v.x1 - v.x0 + 16;
     const bh = v.y1 - v.y0 + 6;
     const fov = 40;
     const t = Math.tan(THREE.MathUtils.degToRad(fov / 2));
     const aspect = Math.max(0.3, availW / Math.max(1, availH));
     const d = Math.max((bh / 2) / t * (H / Math.max(1, availH)), (bw / 2) / (t * aspect) * (H / Math.max(1, availH))) * 1.02;
-    const center = new THREE.Vector3((v.x0 + v.x1) / 2 + 2.5, (v.y0 + v.y1) / 2 + 1.2 - (this.mode === 'build' && this.els.choices && !narrow ? bh * 0.06 : 0), 0);
-    const yaw = drift ? Math.sin(performance.now() * 0.00015) * 0.25 : -0.16;
+    const center = new THREE.Vector3((v.x0 + v.x1) / 2 + 1.5, (v.y0 + v.y1) / 2 + 1.2 - (this.mode === 'build' && this.els.choices && !narrow ? bh * 0.06 : 0), 0);
+    const yaw = drift ? Math.sin(this.modeT * 0.15) * 0.25 : -0.12;
     const dir = new THREE.Vector3(Math.sin(yaw), 0.3, Math.cos(yaw)).normalize();
     const want = center.clone().addScaledVector(dir, d);
     const k = this.modeT < 0.05 ? 1 : Math.min(1, dt * 3.5);

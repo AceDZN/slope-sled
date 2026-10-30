@@ -159,11 +159,11 @@ export class World {
     } else {
       u.top.value.set(COLORS.skyTop); u.mid.value.set(COLORS.sky); u.bottom.value.set(COLORS.horizon); u.sunColor.value.set(0xfff3d6);
       u.sunDir.value.set(0.5, 0.6, 0.4).normalize();
-      this.hemi.intensity = 1.25; this.hemi.color.set(0xdbeaff);
-      this.sun.intensity = 2.6; this.sun.color.set(0xfff1dc);
+      this.hemi.intensity = 1.9; this.hemi.color.set(0xe4f0ff);
+      this.sun.intensity = 3.4; this.sun.color.set(0xfff1dc);
       this.lantern.intensity = 0;
       (this.scene.fog as THREE.Fog).color.set(COLORS.horizon);
-      this.renderer.toneMappingExposure = 1.05;
+      this.renderer.toneMappingExposure = 1.25;
     }
     const d = u.sunDir.value as THREE.Vector3;
     this.sunDir.copy(d);

@@ -31,7 +31,7 @@ class Pool {
       blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
       uniforms: { color: { value: new THREE.Color(color) }, scale: { value: 300 } },
       vertexShader: `attribute float size; attribute float alpha; varying float vA; uniform float scale;
-        void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = size * scale / -mv.z; gl_Position = projectionMatrix * mv; }`,
+        void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = min(size * scale / -mv.z, 40.0); gl_Position = projectionMatrix * mv; }`,
       fragmentShader: `uniform vec3 color; varying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; float d = length(c); if (d > 0.5) discard; gl_FragColor = vec4(color, vA * smoothstep(0.5, 0.15, d)); }`,
     });
     this.points = new THREE.Points(g, mat);
@@ -100,8 +100,8 @@ export class Fx {
     }
   }
 
-  sparkles(at: THREE.Vector3): void {
-    for (let i = 0; i < (this.reduced ? 40 : 140); i++) {
+  sparkles(at: THREE.Vector3, count = 140): void {
+    for (let i = 0; i < (this.reduced ? count / 3 : count); i++) {
       this.v.set((Math.random() - 0.5) * 7, 4 + Math.random() * 6, (Math.random() - 0.5) * 7);
       this.sparkle.emit(at, this.v, 1.5, 1.8, 0.5);
     }

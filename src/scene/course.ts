@@ -47,6 +47,8 @@ export class Course {
   private hintGroup = new THREE.Group();
   private markerGroup = new THREE.Group();
   readonly startTower = new THREE.Group();
+  /** Scenery between the build camera and the grid: shown only during the ride. */
+  readonly rideScenery = new THREE.Group();
   level!: LevelSpec;
   stage!: StageSpec;
   gridOpacity = 1;
@@ -58,13 +60,13 @@ export class Course {
   constructor(private labels: Labels, private assets: Assets) {
     this.snowMat.userData.shared = true;
     this.woodMat.userData.shared = true;
-    this.group.add(this.gridGroup, this.staticGroup, this.trackGroup, this.hintGroup, this.markerGroup, this.startTower);
+    this.group.add(this.rideScenery, this.gridGroup, this.staticGroup, this.trackGroup, this.hintGroup, this.markerGroup, this.startTower);
   }
 
   load(level: LevelSpec, stage: StageSpec): void {
     this.level = level;
     this.stage = stage;
-    for (const g of [this.gridGroup, this.staticGroup, this.trackGroup, this.hintGroup, this.markerGroup]) {
+    for (const g of [this.gridGroup, this.staticGroup, this.trackGroup, this.hintGroup, this.markerGroup, this.rideScenery]) {
       for (const c of [...g.children]) {
         g.remove(c);
         disposeTree(c);
@@ -110,8 +112,8 @@ export class Course {
     arrowY.position.set(x0, y1 + 1.4, GRID_Z + 0.02);
     this.gridGroup.add(ax, ay, arrowX, arrowY);
     // Dark glass behind the grid so cyan lines read over bright snow.
-    const glassMat = new THREE.MeshBasicMaterial({ color: 0x0b2a5a, transparent: true, opacity: 0.34, depthWrite: false });
-    glassMat.userData.base = 0.34;
+    const glassMat = new THREE.MeshBasicMaterial({ color: 0x0b2a5a, transparent: true, opacity: 0.26, depthWrite: false });
+    glassMat.userData.base = 0.26;
     this.gridMats.push(glassMat);
     const glass = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), glassMat);
     glass.position.set((x0 + x1) / 2, (y0 + y1) / 2, GRID_Z - 0.05);
@@ -373,8 +375,9 @@ export class Course {
     const back: THREE.Object3D[] = [];
     for (let i = 0; i < 46; i++) {
       const x = x0 - 30 + rnd() * (x1 - x0 + 90);
-      const z = -8 - rnd() * 46;
-      const p = this.assets.pine(6 + rnd() * 7);
+      const z = -34 - rnd() * 50;
+      if (rnd() < 0.35) continue;
+      const p = this.assets.pine(8 + rnd() * 9);
       p.position.set(x, 0, z);
       p.rotation.y = rnd() * 6;
       back.push(p);
@@ -385,11 +388,12 @@ export class Course {
       const z = 9 + rnd() * 24;
       const p = this.assets.pine(5 + rnd() * 6);
       p.position.set(x, 0, z);
-      back.push(p);
+      this.rideScenery.add(p);
     }
+    this.rideScenery.visible = false;
     for (let i = 0; i < 3; i++) {
       const py = this.assets.pylon();
-      py.position.set(x0 + 6 + i * ((x1 - x0) / 2.2), 0, -20);
+      py.position.set(x0 + 6 + i * ((x1 - x0) / 2.2), 0, -42);
       back.push(py);
     }
     this.staticGroup.add(...back);
@@ -399,7 +403,7 @@ export class Course {
     for (let i = 0; i < 2; i++) {
       const a = x0 + 6 + i * ((x1 - x0) / 2.2);
       const b = a + (x1 - x0) / 2.2;
-      cp.push(a, 15.5, -20, b, 15.5, -20);
+      cp.push(a, 15.5, -42, b, 15.5, -42);
     }
     cg.setAttribute('position', new THREE.Float32BufferAttribute(cp, 3));
     this.staticGroup.add(new THREE.LineSegments(cg, new THREE.LineBasicMaterial({ color: 0x333a44 })));
@@ -461,8 +465,8 @@ export class Course {
     body.receiveShadow = true;
     const edgeMat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: selected ? 1.4 : 0.7, transparent: opacity < 1, opacity });
     for (const z of [-TRACK_W / 2, TRACK_W / 2]) {
-      const e = new THREE.Mesh(new THREE.BoxGeometry(L, 0.2, 0.16), edgeMat);
-      e.position.set(0, 0.06, z);
+      const e = new THREE.Mesh(new THREE.BoxGeometry(L, 0.09, 0.12), edgeMat);
+      e.position.set(0, 0.0, z);
       g.add(e);
     }
     g.add(body);
@@ -518,7 +522,6 @@ export class Course {
       const side = (i + segIndex) % 2 ? 1 : -1;
       const board = this.chevron.clone();
       board.position.set(x, y + 0.55, side * (TRACK_W / 2 + 0.35));
-      board.rotation.y = side > 0 ? 0 : Math.PI;
       this.trackGroup.add(board);
     }
   }
@@ -551,8 +554,7 @@ export class Course {
     mat.userData.shared = true;
     const g = new THREE.Group();
     const board = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), mat);
-    board.rotation.y = Math.PI / 2;
-    board.rotation.y = 0;
+    board.rotation.y = -Math.PI / 2;
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 5), this.woodMat);
     post.position.y = -0.4;
     board.castShadow = true;
