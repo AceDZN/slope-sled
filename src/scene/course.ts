@@ -352,7 +352,7 @@ export class Course {
   private buildFinish(): void {
     const f = this.stage.finish;
     const hut = this.assets.hut();
-    hut.position.set(f.x + 4.2, f.y, -2.6);
+    hut.position.set(f.x + 4.2, f.y, f.y > 0.3 ? -4.6 : -2.6);
     hut.rotation.y = -0.35;
     this.staticGroup.add(hut);
     if (f.y > 0.3) {
@@ -475,7 +475,11 @@ export class Course {
       const fog = o.mode === 'build' && !o.fullPreview && !seg.given;
       if (fog) [xa, xb] = fogVisibleRange(st, track, i);
       // Given segments show their nominal stretch while building, so their ends don't reveal the joint.
-      else if (o.mode === 'build' && seg.given) [xa, xb] = [seg.x0, seg.x1];
+      else if (o.mode === 'build' && seg.given) {
+        // Run given segments through their joint zones so their ends never mark where the lines cross.
+        xa = i > 0 ? Math.min(seg.x0, st.joints[i - 1].zone[0]) : seg.x0;
+        xb = i < st.segments.length - 1 ? Math.max(seg.x1, st.joints[i].zone[1]) : seg.x1;
+      }
       const color = o.badSeg === i ? COLORS.danger : SEG_COLORS[i % SEG_COLORS.length];
       const ghost = o.mode === 'build' && o.fullPreview && !seg.given;
       this.trackGroup.add(this.ribbon(p.line.m, p.line.b, xa, xb, color, ghost ? 0.55 : 1, o.selected === i && o.mode === 'build'));
