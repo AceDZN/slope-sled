@@ -7,7 +7,7 @@ import fs from 'node:fs';
 const SOL = {
   1: [[[-0.5, 20]]], 2: [[[-0.75, 24]]], 3: [[[-1, 20], [0, 4], [0.25, -5]]], 4: [[[-0.5, 24]]], 5: [[[-0.75, 18]]],
   6: [[[-0.5, 20]]], 7: [[[-0.5, 24]]], 8: [[[-1.5, 18]]], 9: [[null, [-0.5, 20]]], 10: [[[-0.4, 22]]],
-  11: [[[-0.5, 13]]], 12: [[[-0.75, 10]]], 13: [[null, [-2, 40]]], 14: [[[-0.2, 18]]], 15: [[[-1.25, 32]]],
+  11: [[[-0.5, 13]]], 12: [[[-0.75, 10]]], 13: [[null, [-2, 40]]], 14: [[null, [-0.2, null]]], 15: [[[-1.25, 32]]],
   16: [[[-0.75, 16]], [[-0.75, 18]], [[-0.5, 18]]], 17: [[[-1, 20], [0, 8], [0.5, -2], [-1, 40]]],
   18: [[[-0.75, 30], [null, 20], null, [-0.25, 17]]],
 };
@@ -50,6 +50,14 @@ for (const [id, stages] of Object.entries(SOL)) {
             s = await st();
             if (Math.abs(s.segments[k].m - t[idx]) < 1e-6 && s.segments[k].chosen) break;
             await page.keyboard.press(s.segments[k].choices.indexOf(s.segments[k].m) < seg.choices.indexOf(t[idx]) ? up : down);
+          }
+          continue;
+        }
+        if (key === 'b' && seg.bChoices) {
+          for (let g = 0; g < 6; g++) {
+            s = await st();
+            if (Math.abs(s.segments[k].b - t[idx]) < 1e-6) break;
+            await page.keyboard.press(s.segments[k].b < t[idx] ? up : down);
           }
           continue;
         }

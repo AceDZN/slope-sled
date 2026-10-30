@@ -18,6 +18,33 @@ Automation can't tell whether the game is fun or whether kids learn from it. Not
   - `scripts/play-all.mjs` plays every level against the production build using key presses only, rides the verified solution, and saves a build and result screenshot per level.
 - **Independent playtester helper:** about 35 headless runs. Notes and 65 screenshots are in `docs/playtest/` (`PLAYTEST_NOTES.md`).
 
+## Every level ridden in the browser (production build, key presses only)
+
+`scripts/play-all.mjs` on `npm run build` + `npm run preview` set each editable dial with ↑/↓/←/→ (or digit / option keys), pressed Enter and waited for the result card. All 18 levels reach the hut with the verified solution. Ride times are in sim seconds:
+
+| L | Track ridden | Ride (s) |
+|---|---|---|
+| 1 | y = −0.5x + 20 | 6.34 |
+| 2 | y = −0.75x + 24 | 5.14 |
+| 3 | y = −x + 20 · y = 4 · y = 0.25x − 5 | 9.63 |
+| 4 | y = −0.5x + 24 | 6.34 |
+| 5 | y = −0.75x + 18 | 4.28 |
+| 6 | y = −0.5x + 20 | 6.34 |
+| 7 | y = −0.5x + 24 | 4.54 |
+| 8 | y = −1.5x + 18 | 3.00 |
+| 9 | y = −x + 30 (given) · y = −0.5x + 20 | 5.63 |
+| 10 | y = −0.4x + 22 | 6.76 |
+| 11 | y = −0.5x + 13 | 3.83 |
+| 12 | y = −0.75x + 10 · y = 0 (given) | 4.48 |
+| 13 | y = −0.5x + 24 (given) · y = −2x + 40 · y = 0 | 5.72 |
+| 14 | y = −x + 18 (given) · y = −0.2x + 18 | 5.62 |
+| 15 | y = −1.25x + 32 · y = −0.5x + 20 (given) | 5.22 |
+| 16 | races: y = −0.75x + 16 · y = −0.75x + 18 · y = −0.5x + 18 | 3.8 / 4.3 / 4.54 |
+| 17 | y = −x + 20 · y = 8 · y = 0.5x − 2 · y = −x + 40 | 6.88 |
+| 18 | y = −0.75x + 30 · y = −0.25x + 20 · y = −x + 44 (given) · y = −0.25x + 17 | 6.61 |
+
+This run also caught a real UI bug. Level 16's b options were shown as a −/+ stepper over an unsorted list, so "+" could lower b. b options are now chips, and stepping always goes in value order.
+
 ## Verified working (observed in real gameplay)
 
 - **First 30 seconds, level 1:**

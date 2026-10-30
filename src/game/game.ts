@@ -263,9 +263,12 @@ export class Game {
     const seg = this.selected;
     const spec = this.stage.segments[seg][key];
     if (spec.choices) {
-      const i = spec.choices.indexOf(this.params[seg][key]);
-      const j = Math.min(spec.choices.length - 1, Math.max(0, (this.chosen[seg] ? i : 1) + dir));
-      this.setParam(seg, key, spec.choices[j]);
+      // Step through the options in value order, so "+" always raises the value.
+      const sorted = [...spec.choices].sort((a, b) => a - b);
+      const i = sorted.indexOf(this.params[seg][key]);
+      const fresh = key === 'm' && !this.chosen[seg];
+      const j = Math.min(sorted.length - 1, Math.max(0, (fresh ? Math.floor(sorted.length / 2) - (dir > 0 ? 1 : 0) : i) + dir));
+      this.setParam(seg, key, sorted[j]);
       return;
     }
     const step = (spec.step ?? (key === 'm' ? 0.05 : 0.5)) * (big ? 5 : 1);
@@ -800,7 +803,10 @@ export class Game {
         <button class="step" data-a="m-" data-i="${i}" aria-label="הקטנת שיפוע">−</button><div class="val" data-el="mv${i}"></div><button class="step" data-a="m+" data-i="${i}" aria-label="הגדלת שיפוע">+</button></div>
         <div class="row"><div class="riserun" data-el="rr${i}"></div></div>
         <input class="slider" dir="ltr" type="range" min="${s.m.min ?? -3}" max="${s.m.max ?? 3}" step="${s.m.step ?? 0.05}" data-slider="m" data-i="${i}" aria-label="שיפוע">` : ''}
-      ${bEd ? `<div class="row"><div class="lab">האיבר החופשי ${ltr('b')}</div><button class="step" data-a="b-" data-i="${i}" aria-label="הקטנת b">−</button><div class="val" data-el="bv${i}"></div><button class="step" data-a="b+" data-i="${i}" aria-label="הגדלת b">+</button></div>` : ''}
+      ${bEd && s.b.choices ? `<div class="row"><div class="lab">האיבר החופשי ${ltr('b')}</div><div class="chips">${s.b.choices
+        .map((c) => `<button class="chip" data-a="choiceb" data-k="b" data-i="${i}" data-v="${c}">${ltr(num(c))}</button>`)
+        .join('')}</div></div>` : ''}
+      ${bEd && !s.b.choices ? `<div class="row"><div class="lab">האיבר החופשי ${ltr('b')}</div><button class="step" data-a="b-" data-i="${i}" aria-label="הקטנת b">−</button><div class="val" data-el="bv${i}"></div><button class="step" data-a="b+" data-i="${i}" aria-label="הגדלת b">+</button></div>` : ''}
       <div class="range" data-el="rng${i}">${xa !== null ? '' : ''}</div></div>`;
   }
 
@@ -834,7 +840,8 @@ export class Game {
     });
     this.hud.querySelectorAll<HTMLElement>('.choice, .chip').forEach((b) => {
       const j = b.dataset.i === undefined ? 0 : Number(b.dataset.i);
-      b.classList.toggle('on', this.chosen[j] && Number(b.dataset.v) === this.params[j].m);
+      const key = b.dataset.k === 'b' ? 'b' : 'm';
+      b.classList.toggle('on', (key === 'b' || this.chosen[j]) && Number(b.dataset.v) === this.params[j][key]);
     });
     const go = this.els.go as HTMLButtonElement | undefined;
     if (go) go.disabled = !this.chosen.every(Boolean);
@@ -1011,6 +1018,7 @@ export class Game {
         break;
       case 'hint': this.useHint(); break;
       case 'go': this.go(); break;
+      case 'choiceb': this.selected = i; this.setParam(i, 'b', Number(el.dataset.v)); break;
       case 'choice': this.selected = Number.isNaN(i) ? 0 : i; this.setParam(this.selected, 'm', Number(el.dataset.v)); break;
       case 'sel': this.selectSeg(i); break;
       case 'm-': this.selected = i; this.nudge('m', -1); break;
@@ -1194,6 +1202,7 @@ export class Game {
         given: !!seg.given,
         editable: { m: !seg.given && editable(seg.m), b: !seg.given && editable(seg.b) },
         choices: seg.m.choices,
+        bChoices: seg.b.choices,
         interval: [tr.pieces[i].xa, tr.pieces[i].xb],
         fogVisible: this.mode === 'build' && !this.level.fullPreview && !seg.given ? fogVisibleRange(st, tr, i) : null,
       })),
