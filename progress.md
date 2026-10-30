@@ -2,7 +2,7 @@
 
 ## 2026-10-30
 
-- **Repo:** created at `/Users/acedzn/dev/AceDZN-exp/slope-sled` on `main` with the handoff docs in `docs/handoff/`. **GitHub repo not created yet:** Claude Code's auto-mode permission check blocked `gh repo create AceDZN/slope-sled --public --source . --push` twice ("Create Public Surface"). Everything is committed locally and ready to push once the user approves or runs that command.
+- **Repo:** created at `/Users/acedzn/dev/AceDZN-exp/slope-sled` on `main` with the handoff docs in `docs/handoff/`. Auto mode's permission check blocked `gh repo create` twice, so the user created the public repo [AceDZN/slope-sled](https://github.com/AceDZN/slope-sled) themselves on 2026-10-31. All work is pushed to `main`.
 - **Mockups (step 1, before game code):** 5 gameplay targets from ChatGPT in the user's Chrome, one fresh chat, one attempt each. They're in `docs/visual-targets/`, with prompts in `PROMPTS.md`. The pure math modules were written in parallel; no scene or UI code existed before the mockups arrived.
 - **Tripo (step 2):**
   - 7 models in `public/models/`: a rigged kid sledder (idle / sit / cheer / fall), a rigged dog (walk only, since Tripo's quadruped rig has no run preset and the AI run failed), sled, hut, rock, pylon, and a gallery pine.
@@ -30,5 +30,4 @@
 
 ## Open / next
 
-- Push to GitHub once the user approves the public repo.
 - The dog has no real run cycle (it uses a sped-up walk).
