@@ -7,6 +7,9 @@ It's a snow day on Mount Hermon. You build a sled run out of straight lines `y =
 - 18 authored levels in 4 worlds: Bunny Hill (slope), Pine Forest (free term and the equation of a line), Rock Garden (inequalities), and Twin Trails (systems and graph reading). Each world ends with a transfer level, and the last level is a no-hint final.
 - Tripo models: a rigged kid sledder (idle / sit / cheer / fall), a rigged dog (walk cycle), sled, ski hut, pines, rocks and a cable-car pylon. See [ASSETS.md](ASSETS.md).
 - Hebrew RTL UI with LTR equations. The x-axis still grows left → right, and the grid says so.
+- A 3D trail-map level select on the mountain, with stars saved in `localStorage`. After a world's transfer level, "❄ ריצה חדשה" generates fresh runs that a solver has checked.
+
+**Implemented:** everything above. **Not implemented / planned:** a real dog run cycle (Tripo offered only walk for the quadruped rig), a belly-down riding pose, and classroom playtests. See [PLAYTEST.md](PLAYTEST.md).
 
 ## Run
 

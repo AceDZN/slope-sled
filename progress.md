@@ -14,7 +14,14 @@
   - +½ refuses to climb and slides back, followed by a worked explanation.
 - **All 18 levels** were authored and solver-verified by the level-design helper. See `LEVELS.md`, `CURRICULUM.md` and `tests/levels.test.ts`.
 - **Replay:** "ריצה חדשה" generates a fresh, solver-verified run per world. It unlocks after the world's transfer level. Generated runs have 1–5 solutions, and "always m = −1" fails them.
-- **Visual review** against the mockups: `docs/VISUAL_REVIEW.md`, with captures in `docs/visual-review/`.
+- **Visual review** against the mockups: `docs/VISUAL_REVIEW.md`, with captures in `docs/visual-review/`. Fixed during the review:
+  - Explanations now cite the worst point.
+  - The branch pine moved behind the course.
+  - The kid and dog use a hero scale in the build view.
+  - Open sky and Hermon peaks.
+  - Table and coach-graph cards docked at the bottom.
+  - Level select rebuilt as a 3D trail map.
+- **Independent playtest:** about 35 headless runs; findings are in `docs/playtest/PLAYTEST_NOTES.md`. The P0 joint leak (live interval readout and fog stubs) and every P1 were fixed. Remaining limits are listed in `PLAYTEST.md`.
 
 ## Verification environment notes
 
@@ -24,5 +31,4 @@
 ## Open / next
 
 - Push to GitHub once the user approves the public repo.
-- Level select is a DOM map over the 3D mountain, not the mockup's full 3D diorama.
 - The dog has no real run cycle (it uses a sped-up walk).
