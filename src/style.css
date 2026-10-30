@@ -198,3 +198,6 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
   .result h1 { font-size: 32px; }
 }
 @media (prefers-reduced-motion: reduce) { .popup { animation-duration: .01s; } }
+
+.flag.fresh { background: #e8f6ff; box-shadow: 0 3px 0 #7fb6d8; }
+.flag.fresh .n { background: var(--ice); }

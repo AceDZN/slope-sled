@@ -88,7 +88,7 @@ export function explain(outcome: RideOutcome, stage: StageSpec): Explanation {
     case 'collide': {
       const who = WHO[stage.rival?.who ?? 'rival'];
       return mk('בום!', `התנגשתם ב${who}`, [['נקודת החיתוך', ltr(`(${num(h.x, 2)}, ${num(h.trackY, 2)})`), 'bad']],
-        `לישרים שיפועים שונים, ולכן הם נחתכים בנקודה אחת: ${ltr(`x = ${num(h.x, 2)}`)}. רצינו שלא תיפגשו — צריך ישר מקביל.`);
+        `לישרים שיפועים שונים, ולכן למערכת יש פתרון יחיד — הם נחתכים ב־${ltr(`x = ${num(h.x, 2)}`)}. רצינו שלא תיפגשו: צריך ישר מקביל (אותו שיפוע, b שונה).`);
     }
     case 'never-met': {
       const who = WHO[stage.rival?.who ?? 'rival'];
@@ -100,7 +100,7 @@ export function explain(outcome: RideOutcome, stage: StageSpec): Explanation {
         `כדי לרכוב צמודים כל הדרך צריך את אותו ישר בדיוק — אותו שיפוע ואותו איבר חופשי. אז יש אינסוף נקודות משותפות.`);
     case 'tangled':
       return mk('אופס!', 'הסתבכתם זה בזה', [],
-        `בחרתם בדיוק את אותו הישר — כל הנקודות משותפות (אינסוף פתרונות), אז נתקעתם יחד מההתחלה.`);
+        `בחרתם בדיוק את אותו הישר — לכל הנקודות יש פתרון משותף (אינסוף פתרונות), אז נתקעתם יחד מההתחלה.`);
   }
 }
 

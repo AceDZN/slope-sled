@@ -8,6 +8,7 @@ import { Rider, Dog } from '../scene/characters.ts';
 import { Fx } from '../scene/fx.ts';
 import { Sound } from '../audio.ts';
 import { LEVELS, levelById } from '../math/levels.ts';
+import { generateRun } from '../math/generate.ts';
 import { buildTrack, trackY, fogVisibleRange, type Track } from '../math/track.ts';
 import { RideSim, type RideOutcome } from '../math/ride.ts';
 import { snap } from '../math/line.ts';
@@ -127,8 +128,14 @@ export class Game {
     return this.level.stages[this.stageIdx];
   }
 
-  loadLevel(id: number, toBuild = true): void {
-    this.level = levelById(id);
+  private genSeed = Math.floor(Math.random() * 1e6);
+
+  get generated(): boolean {
+    return this.level.id >= 100;
+  }
+
+  loadLevel(id: number | LevelSpec, toBuild = true): void {
+    this.level = typeof id === 'number' ? levelById(id) : id;
     this.stageIdx = 0;
     this.builds = 0;
     this.hintUsed = false;
@@ -448,8 +455,10 @@ export class Game {
     if (last && this.outcome?.ok) {
       const stars = starsFor(this.builds, this.hintUsed);
       this.lastStars = stars;
-      const prev = this.progress.stars[this.level.id] ?? 0;
-      this.progress.stars[this.level.id] = Math.max(prev, stars);
+      if (!this.generated) {
+        const prev = this.progress.stars[this.level.id] ?? 0;
+        this.progress.stars[this.level.id] = Math.max(prev, stars);
+      }
     }
     saveProgress(this.progress);
     this.setMode('result');
@@ -476,9 +485,14 @@ export class Game {
       this.setMode('build');
       return;
     }
+    if (this.generated) return this.freshRun(this.level.world);
     const nextId = this.level.id + 1;
     if (LEVELS.some((l) => l.id === nextId)) this.loadLevel(nextId);
     else this.setMode('select');
+  }
+
+  freshRun(world: 1 | 2 | 3 | 4): void {
+    this.loadLevel(generateRun(world, ++this.genSeed));
   }
 
   restartLevel(): void {
@@ -494,7 +508,7 @@ export class Game {
     const dt = dtReal * this.timeScale;
     const cam = this.world.camera;
     if (this.mode === 'build' || this.mode === 'title' || this.mode === 'select') {
-      this.course.setGridOpacity(this.mode === 'build' ? 1 : 0.35);
+      this.course.setGridOpacity(this.mode === 'build' ? 1 : 0);
       this.frameBuild(dtReal, this.mode !== 'build');
     } else if (this.mode === 'swoop') {
       const k = Math.min(1, this.modeT / 1.3);
@@ -536,7 +550,7 @@ export class Game {
     this.course.update(dtReal);
     this.world.update(dtReal);
     this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.viewCenter());
-    if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title';
+    if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title' || this.mode === 'select';
   }
 
   private updateCrash(dt: number, dtReal: number): void {
@@ -835,7 +849,7 @@ export class Game {
     if (o.ok) {
       const last = this.stageIdx === this.level.stages.length - 1;
       const stars = last ? [0, 1, 2].map((i) => `<span class="star ${i < this.lastStars ? 'on' : ''}">★</span>`).join('') : '';
-      const nextLabel = last ? (LEVELS.some((l) => l.id === this.level.id + 1) ? 'לשלב הבא' : 'למפה') : 'למרוץ הבא';
+      const nextLabel = this.generated ? 'ריצה חדשה' : last ? (LEVELS.some((l) => l.id === this.level.id + 1) ? 'לשלב הבא' : 'למפה') : 'למרוץ הבא';
       return `<div class="result win"><h1>${last ? 'יש!' : 'הצלחה!'}</h1><h2>${last ? 'הגעתם לבקתה' : `מקטע ${this.stageIdx + 1} מתוך ${this.level.stages.length}`}</h2>
         ${last ? `<div class="bigstars">${stars}</div>` : ''}
         <div class="box"><div class="txt">המסלול: ${this.params.map((p, i) => `<div>${i + 1}. ${ltr(equation(p.m, p.b))}</div>`).join('')}
@@ -863,7 +877,10 @@ export class Game {
               <div class="n">${un ? l.id : '🔒'}</div><div class="ft">${l.title}${l.transfer ? ' ⛰' : ''}</div><div class="fs">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</div></button>`;
           })
           .join('');
-        return `<div class="world"><h3>${WORLD_NAMES[w][0]}</h3><div class="sub">${WORLD_NAMES[w][1]}</div><div class="flags">${flags}</div></div>`;
+        const transfer = LEVELS.filter((l) => l.world === w && l.transfer).map((l) => l.id);
+        const open = transfer.some((id) => (this.progress.stars[id] ?? 0) > 0);
+        const fresh = `<button class="flag fresh ${open ? '' : 'locked'}" data-a="fresh" data-i="${w}" ${open ? '' : 'disabled'} title="${open ? '' : 'נפתח אחרי שלב ההעברה של העולם'}"><div class="n">❄</div><div class="ft">ריצה חדשה${open ? '' : ' · נפתח בסוף העולם'}</div></button>`;
+        return `<div class="world"><h3>${WORLD_NAMES[w][0]}</h3><div class="sub">${WORLD_NAMES[w][1]}</div><div class="flags">${flags}${fresh}</div></div>`;
       })
       .join('');
     return `<div class="select"><div class="top"><h1>⛰ החרמון</h1><div class="pill"><div class="lvname">★ ${ltr(String(total))} / ${ltr(String(LEVELS.length * 3))} · ❄ ${ltr(String(this.progress.flakes))}</div></div></div>
@@ -901,6 +918,7 @@ export class Game {
       }
       case 'select': this.paused = false; this.sound.click(); this.setMode('select'); break;
       case 'level': this.sound.click(); this.loadLevel(i); break;
+      case 'fresh': this.sound.click(); this.freshRun(i as 1 | 2 | 3 | 4); break;
       case 'pause': this.setPaused(true); break;
       case 'resume': this.setPaused(false); break;
       case 'restart': this.restartLevel(); break;
