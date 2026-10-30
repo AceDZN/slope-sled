@@ -536,7 +536,7 @@ export class Game {
     this.course.update(dtReal);
     this.world.update(dtReal);
     this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.viewCenter());
-    if (this.mode !== 'ride' && this.mode !== 'swoop') this.labels.hidden = this.mode === 'title';
+    if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title';
   }
 
   private updateCrash(dt: number, dtReal: number): void {
@@ -547,8 +547,10 @@ export class Game {
       // Celebration: keep simulating the landing, orbit slowly, then results.
       if (!sim.done) sim.advance(dt * 1000);
       const p = this.rider.root.position;
-      const a = this.modeT * 0.35;
-      const want = new THREE.Vector3(p.x - 6 * Math.cos(a), p.y + 3.2, 6 * Math.sin(a) + 4);
+      this.labels.hidden = true;
+      this.course.setGridOpacity(0);
+      const a = 0.5 + this.modeT * 0.3;
+      const want = new THREE.Vector3(p.x - 9 * Math.cos(a), p.y + 3.6, 9 * Math.sin(a) + 2);
       cam.position.lerp(want, Math.min(1, dtReal * 2.5));
       cam.lookAt(p.x, p.y + 0.8, 0);
       // Dog leaps into your lap.

@@ -96,7 +96,8 @@ function raceAgainst(track: Track, rival: Line, rx0: number, rx1: number): RaceR
     const w = Math.min(p.xb, rx1);
     if (u > w + TINY) continue;
     const s = solveSystem(p.line, rival);
-    if (s.kind === 'infinite') sawInfinite = true;
+    // Sharing a single end point with the rival's line is not riding in tandem (e.g. a given segment that starts on it).
+    if (s.kind === 'infinite' && w - u > TINY) sawInfinite = true;
     else if (s.kind === 'one' && s.x >= u - TINY && s.x <= w + TINY) return { kind: 'one', x: s.x, y: s.y, ok: false, seg: p.seg };
   }
   return { kind: sawInfinite ? 'infinite' : 'none', ok: false, seg: 0 };
