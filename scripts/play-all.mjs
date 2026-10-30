@@ -28,6 +28,7 @@ for (const [id, stages] of Object.entries(SOL)) {
   if (only.length && !only.includes(Number(id))) continue;
   await page.evaluate((i) => window.__game.loadLevel(i), Number(id));
   await adv(300);
+  if ((await st()).lesson) { await page.keyboard.press('Enter'); await adv(100); }
   let outcome = null;
   for (let si = 0; si < stages.length; si++) {
     const segs = stages[si];

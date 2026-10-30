@@ -9,13 +9,14 @@ import { Fx } from '../scene/fx.ts';
 import { TrailMap } from '../scene/map.ts';
 import { Sound } from '../audio.ts';
 import { LEVELS, levelById } from '../math/levels.ts';
-import { generateRun } from '../math/generate.ts';
+import { generateRun, generateExpert } from '../math/generate.ts';
 import { buildTrack, trackY, fogVisibleRange, type Track } from '../math/track.ts';
 import { RideSim, type RideOutcome } from '../math/ride.ts';
 import { snap } from '../math/line.ts';
 import { equation, num, riseRun, ltr, point } from '../math/format.ts';
 import type { LevelSpec, ParamSpec, StageParams, StageSpec } from '../math/types.ts';
 import { explain, CHEERS, type Explanation } from './explain.ts';
+import { LESSONS, LEVEL_LESSON, LEVEL_DIFFICULTY, DIFFICULTY_LABEL, type Difficulty } from './lessons.ts';
 import { loadProgress, saveProgress, starsFor, unlocked, LearningLog, type Progress } from './progress.ts';
 
 type Mode = 'title' | 'select' | 'build' | 'swoop' | 'ride' | 'crash' | 'result';
@@ -62,6 +63,8 @@ export class Game {
 
   mode: Mode = 'title';
   paused = false;
+  /** Lesson card currently open (blocks build input until closed). */
+  lesson: string | null = null;
   level!: LevelSpec;
   stageIdx = 0;
   params: StageParams = [];
@@ -143,6 +146,37 @@ export class Game {
 
   private genSeed = Math.floor(Math.random() * 1e6);
 
+  get difficulty(): Difficulty {
+    if (this.level.id >= 200) return 'expert';
+    if (this.level.id >= 100) return 'medium';
+    return LEVEL_DIFFICULTY[this.level.id] ?? 'medium';
+  }
+
+  closeLesson(): void {
+    if (!this.lesson) return;
+    if (!this.progress.seenLessons.includes(this.lesson)) this.progress.seenLessons.push(this.lesson);
+    saveProgress(this.progress);
+    this.lesson = null;
+    this.sound.click();
+    this.renderHud();
+  }
+
+  openLesson(): void {
+    const ls = LEVEL_LESSON[this.level.id] ?? (this.level.world === 1 ? 'riseRun' : this.level.world === 2 ? 'twoPoints' : this.level.world === 3 ? 'inequality' : 'counts');
+    this.lesson = ls;
+    this.sound.click();
+    this.renderHud();
+  }
+
+  private lessonHtml(): string {
+    const l = LESSONS[this.lesson!];
+    if (!l) return '';
+    return `<div class="overlay lesson-overlay"><div class="lesson" role="dialog" aria-label="${l.title}">
+      <div class="lesson-kicker">מיומנות חדשה</div><h2>${l.title}</h2><div class="term">${l.term}</div>
+      <div class="lesson-art">${l.svg}</div>${l.lines.map((x) => `<p>${x}</p>`).join('')}
+      <div class="lesson-btns"><button class="btn primary" data-a="lesson-ok">יאללה, לבנות!</button><a class="wb" href="${l.url}" target="_blank" rel="noopener">📘 עוד ב־Workbook</a></div></div></div>`;
+  }
+
   get generated(): boolean {
     return this.level.id >= 100;
   }
@@ -156,6 +190,8 @@ export class Game {
     this.builds = 0;
     this.hintUsed = false;
     this.loadStage();
+    const ls = LEVEL_LESSON[this.level.id];
+    this.lesson = toBuild && !this.generated && ls && !this.progress.seenLessons.includes(ls) ? ls : null;
     if (toBuild) this.setMode('build');
   }
 
@@ -475,7 +511,7 @@ export class Game {
     const clean = this.cleanLanding ? (this.tricks > 0 ? 40 : 20) : 0;
     const speed = Math.round((this.outcome.maxSpeed ?? 0) * 3.6);
     const total = flakes + tricks + clean + speed;
-    const key = this.generated ? 100 + this.level.world : this.level.id;
+    const key = this.level.id;
     const best = Math.max(total, this.progress.best[key] ?? 0);
     const isBest = total > (this.progress.best[key] ?? 0);
     this.progress.best[key] = best;
@@ -546,6 +582,9 @@ export class Game {
       if (!this.generated) {
         const prev = this.progress.stars[this.level.id] ?? 0;
         this.progress.stars[this.level.id] = Math.max(prev, stars);
+      } else {
+        const k = `${this.level.id >= 200 ? 'expert' : 'fresh'}-${this.level.world}`;
+        this.progress.runs[k] = (this.progress.runs[k] ?? 0) + 1;
       }
     }
     saveProgress(this.progress);
@@ -573,10 +612,15 @@ export class Game {
       this.setMode('build');
       return;
     }
+    if (this.level.id >= 200) return this.expertRun(this.level.world);
     if (this.generated) return this.freshRun(this.level.world);
     const nextId = this.level.id + 1;
     if (LEVELS.some((l) => l.id === nextId)) this.loadLevel(nextId);
     else this.setMode('select');
+  }
+
+  expertRun(world: 1 | 2 | 3 | 4): void {
+    this.loadLevel(generateExpert(world, ++this.genSeed));
   }
 
   freshRun(world: 1 | 2 | 3 | 4): void {
@@ -789,8 +833,9 @@ export class Game {
     const stars = this.progress.stars[this.level.id] ?? 0;
     const st = [0, 1, 2].map((i) => `<span class="star ${i < stars ? 'on' : ''}">★</span>`).join('');
     const hint = this.level.noHints || !this.stage.hint ? '' : `<button class="hint-btn" data-a="hint" aria-label="רמז (עולה כוכב)" title="רמז (עולה כוכב)" ${this.mode !== 'build' ? 'disabled' : ''}>💡</button>`;
-    return `<div class="tl"><button class="round" data-a="pause" aria-label="השהיה">${ICON.pause}</button><button class="round" data-a="mute" aria-label="השתקה">${this.sound.muted ? ICON.mute : ICON.sound}</button></div>
-      <div class="tr"><div class="pill">${ICON.mtn}<div class="lvname"><b>${this.generated ? '❄' : `שלב ${this.level.id}`}</b> : ${this.level.title}</div><div class="stars">${st}</div></div>${hint}</div>`;
+    const book = this.mode === 'build' ? `<button class="round" data-a="lesson" aria-label="שיעור קצר" title="שיעור קצר">📖</button>` : '';
+    return `<div class="tl"><button class="round" data-a="pause" aria-label="השהיה">${ICON.pause}</button>${book}<button class="round" data-a="mute" aria-label="השתקה">${this.sound.muted ? ICON.mute : ICON.sound}</button></div>
+      <div class="tr"><div class="pill">${ICON.mtn}<div class="lvname"><b>${this.generated ? '❄' : `שלב ${this.level.id}`}</b> : ${this.level.title}</div><span class="diff diff-${this.difficulty}">${DIFFICULTY_LABEL[this.difficulty]}</span><div class="stars">${st}</div></div>${hint}</div>`;
   }
 
   renderHud(): void {
@@ -803,7 +848,7 @@ export class Game {
     } else if (this.mode === 'select') {
       h.innerHTML = this.selectHtml();
     } else if (this.mode === 'build') {
-      h.innerHTML = this.topBar() + this.buildHtml();
+      h.innerHTML = this.topBar() + this.buildHtml() + (this.lesson ? this.lessonHtml() : '');
     } else if (this.mode === 'swoop' || this.mode === 'ride') {
       h.innerHTML = this.topBar() + this.rideHtml();
     } else if (this.mode === 'crash') {
@@ -1013,7 +1058,14 @@ export class Game {
     }
     this.map.worldCenters.forEach((c, i) => {
       const w = i + 1;
-      this.labels.set(`map:w${w}`, c.clone().add(new THREE.Vector3(0, 7, 0)), `<div class="sign"><b>${WORLD_NAMES[w][0]}</b><small>${WORLD_NAMES[w][1]}</small></div>`, 'lbl map-sign');
+      const open = LEVELS.some((l) => l.world === w && l.transfer && (this.progress.stars[l.id] ?? 0) > 0);
+      const done = LEVELS.filter((l) => l.world === w).every((l) => (this.progress.stars[l.id] ?? 0) > 0);
+      const fr = this.progress.runs[`fresh-${w}`] ?? 0;
+      const ex = this.progress.runs[`expert-${w}`] ?? 0;
+      const btns = open
+        ? `<div class="sign-btns"><button data-a="fresh" data-i="${w}" title="ריצה חדשה באותה רמה">❄ תרגול${fr ? ` ${ltr('✓' + fr)}` : ''}</button><button class="ex" data-a="expert" data-i="${w}" title="רמת מומחה, בלי רמזים">🏔 מומחה${ex ? ` ${ltr('✓' + ex)}` : ''}</button></div>`
+        : `<div class="sign-lock">🔒 תרגול ומומחה — אחרי שלב ההעברה</div>`;
+      this.labels.set(`map:w${w}`, c.clone().add(new THREE.Vector3(0, 7, 0)), `<div class="sign ${done ? 'done' : ''}"><b>${done ? '✓ ' : ''}${WORLD_NAMES[w][0]}</b><small>${WORLD_NAMES[w][1]}</small>${btns}</div>`, 'lbl map-sign');
     });
   }
 
@@ -1036,10 +1088,7 @@ export class Game {
         return `<div class="world"><h3>${WORLD_NAMES[w][0]}</h3><div class="sub">${WORLD_NAMES[w][1]}</div><div class="flags">${flags}${fresh}</div></div>`;
       })
       .join('');
-    const freshBtns = [1, 2, 3, 4]
-      .filter((w) => LEVELS.some((l) => l.world === w && l.transfer && (this.progress.stars[l.id] ?? 0) > 0))
-      .map((w) => `<button class="btn secondary fresh-btn" data-a="fresh" data-i="${w}">❄ ריצה חדשה · ${WORLD_NAMES[w][0]}</button>`)
-      .join('');
+    const freshBtns = '';
     const curL = levelById(cur);
     return `<div class="select"><div class="top"><h1>⛰ מפת החרמון</h1><div class="pill"><div class="lvname">★ ${ltr(String(total))} / ${ltr(String(LEVELS.length * 3))} · ❄ ${ltr(String(this.progress.flakes))}</div></div></div>
       <details class="worlds-list"><summary>רשימת שלבים</summary><div class="worlds">${worlds}</div></details>
@@ -1077,6 +1126,7 @@ export class Game {
       case 'select': this.paused = false; this.sound.click(); this.setMode('select'); break;
       case 'level': this.sound.click(); this.loadLevel(i); break;
       case 'fresh': this.sound.click(); this.freshRun(i as 1 | 2 | 3 | 4); break;
+      case 'expert': this.sound.click(); this.expertRun(i as 1 | 2 | 3 | 4); break;
       case 'pause': this.setPaused(true); break;
       case 'resume': this.setPaused(false); break;
       case 'restart': this.restartLevel(); break;
@@ -1087,6 +1137,8 @@ export class Game {
         this.renderHud();
         break;
       case 'hint': this.useHint(); break;
+      case 'lesson': this.openLesson(); break;
+      case 'lesson-ok': this.closeLesson(); break;
       case 'go': this.go(); break;
       case 'choiceb': this.selected = i; this.setParam(i, 'b', Number(el.dataset.v)); break;
       case 'choice': this.selected = Number.isNaN(i) ? 0 : i; this.setParam(this.selected, 'm', Number(el.dataset.v)); break;
@@ -1208,10 +1260,15 @@ export class Game {
     window.addEventListener('keydown', (e) => {
       this.sound.unlock();
       const k = e.key;
+      if (k === 'Escape' && this.lesson && this.mode === 'build') return this.closeLesson();
       if (k === 'Escape' || k === 'p' || k === 'P') return this.setPaused(!this.paused);
       if (k === 'm' || k === 'M') return this.action('mute', this.hud);
       if (this.paused) return;
       if (this.mode === 'title' && (k === 'Enter' || k === ' ')) return this.action('play', this.hud);
+      if (this.mode === 'build' && this.lesson) {
+        if (k === 'Enter' || k === 'Escape' || k === ' ') { this.closeLesson(); e.preventDefault(); }
+        return;
+      }
       if (this.mode === 'build') {
         if (k === 'ArrowUp') { this.nudge('m', 1, e.shiftKey); e.preventDefault(); }
         else if (k === 'ArrowDown') { this.nudge('m', -1, e.shiftKey); e.preventDefault(); }
@@ -1258,6 +1315,8 @@ export class Game {
       coords: 'x = horizontal distance (m, grows left→right), y = altitude (m)',
       mode: this.mode,
       paused: this.paused,
+      lesson: this.lesson,
+      difficulty: this.level ? this.difficulty : null,
       level: this.level ? { id: this.level.id, title: this.level.title, world: this.level.world, stage: `${this.stageIdx + 1}/${this.level.stages.length}` } : null,
       objective: this.level?.goal,
       builds: this.builds,

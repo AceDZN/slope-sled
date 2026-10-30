@@ -356,8 +356,8 @@ export class Course {
     hut.rotation.y = -0.35;
     this.staticGroup.add(hut);
     if (f.y > 0.3) {
-      const plat = new THREE.Mesh(new THREE.BoxGeometry(12, f.y, 9), this.snowMat);
-      plat.position.set(f.x + 5.5, f.y / 2, -3.2);
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(12, f.y, 5), this.snowMat);
+      plat.position.set(f.x + 5.5, f.y / 2, -4.6);
       plat.receiveShadow = true;
       this.staticGroup.add(plat);
     }
@@ -385,12 +385,20 @@ export class Course {
     rib.userData.rival = true;
     this.staticGroup.add(rib);
     // The rival's line drawn on the grid (always readable — it is given data).
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute([r.x0, ya, GRID_Z + 0.1, r.x1, yb, GRID_Z + 0.1], 3));
-    const lm = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 1 });
+    // The rival's line on the grid: a bold dashed bar so it reads on the cliff face.
+    const lm = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1 });
     lm.userData.base = 1;
     this.gridMats.push(lm);
-    this.gridGroup.add(new THREE.Line(g, lm));
+    const n = Math.max(2, Math.floor(L / 1.1));
+    for (let i = 0; i < n; i += 1) {
+      if (i % 2) continue;
+      const xa = r.x0 + ((r.x1 - r.x0) * i) / n;
+      const xb = r.x0 + ((r.x1 - r.x0) * (i + 1)) / n;
+      const seg = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(xb - xa, (xb - xa) * r.m), 0.2, 0.05), lm);
+      seg.position.set((xa + xb) / 2, r.m * (xa + xb) / 2 + r.b, GRID_Z + 0.12);
+      seg.rotation.z = Math.atan(r.m);
+      this.gridGroup.add(seg);
+    }
     const who = { dog: '🐕 הכלב', friend: 'החבר', ghost: '👻 מסלול הרוח', rival: 'היריב' }[r.who];
     const lx = r.x0 + (r.x1 - r.x0) * 0.72;
     const txt = r.graphOnly ? who : `${who}: ${ltr(equation(r.m, r.b))}`;
@@ -486,7 +494,7 @@ export class Course {
           this.labels.set(`c:t${i}`, [xa + 0.4, yAt(p.line, xa) + 1.2, GRID_Z], `<span class="seg-tag" style="--c:${SEG_CSS[i % 4]}">${i + 1}</span>`, 'lbl tag');
         }
       }
-      if (o.mode !== 'build' || seg.given) this.embankment(p.line.m, p.line.b, xa, xb, i);
+      if (o.mode !== 'build') this.embankment(p.line.m, p.line.b, xa, xb, i);
     });
     if (o.mode === 'ride' && !st.segments[st.segments.length - 1].launch) {
       // Kicker at the hut: a short lip the sled pops off into the powder.

@@ -136,6 +136,135 @@ function level(world: 1 | 2 | 3 | 4, v: { x1: number; y1: number }, st: Omit<Sta
   };
 }
 
+/** All dial settings of the stage's one editable segment that ride successfully (others at their fixed values). */
+export function solveEditable(stage: StageSpec): StageParams[] {
+  const idx = stage.segments.findIndex((s) => !s.given && (s.m.fixed === undefined || s.b.fixed === undefined));
+  if (idx < 0) return [];
+  const s = stage.segments[idx];
+  const base = stage.segments.map((g) => ({ m: g.m.fixed ?? 0, b: g.b.fixed ?? 0 }));
+  const sols: StageParams[] = [];
+  for (const m of grid(s.m, 'm')) {
+    for (const b of grid(s.b, 'b')) {
+      const p = base.map((q, i) => (i === idx ? { m, b } : q));
+      if (judge(stage, p).first) continue;
+      if (simulateRide(stage, p).ok) sols.push(p);
+    }
+  }
+  return sols;
+}
+
+const EXPERT_TITLES: Record<number, string> = {
+  1: 'מומחה: שני שערים, שיפוע אחד',
+  2: 'מומחה: מפרק בנקודת חיתוך',
+  3: 'מומחה: רכס משופע וכרכוב',
+  4: 'מומחה: נתיב מקביל לרוח',
+};
+
+/** Harder generated runs: fractions of steps, joints, sloped inequalities, equations read from a graph. */
+function buildExpert(world: 1 | 2 | 3 | 4, r: () => number): LevelSpec | null {
+  const mDial: ParamSpec = { min: -3, max: 1.5, step: 0.05, initial: 0 };
+  const lv = (v: { x0?: number; x1: number; y0?: number; y1: number }, st: Omit<StageSpec, 'id'>, goal: string): LevelSpec => ({
+    id: 200 + world,
+    world,
+    title: EXPERT_TITLES[world],
+    goal,
+    noHints: true,
+    view: { x0: v.x0 ?? 0, x1: v.x1, y0: v.y0 ?? 0, y1: v.y1 },
+    modules: [],
+    stages: [{ id: `expert-${world}`, ...st }],
+  });
+  if (world === 1) {
+    // Steeper and less round slopes; two unlabeled-in-between gates on one line.
+    const y0 = pick(r, [26, 28, 30, 32]);
+    const m = pick(r, [-0.35, -0.45, -0.55, -0.65, -0.85, -1.15]);
+    const L = pick(r, [20, 24, 28, 32, 36, 40]);
+    const xa = pick(r, [L / 4, L / 2]);
+    const xb = pick(r, [(3 * L) / 4, L - 2]);
+    const ya = y0 + m * xa, yb = y0 + m * xb, ye = y0 + m * L;
+    if (ye < 0 || !isHalf(ya) || !isHalf(yb) || !isHalf(ye) || !Number.isInteger(xa) || !Number.isInteger(xb)) return null;
+    return lv({ x1: L + 4, y1: y0 + 4 }, {
+      segments: [{ id: 'a', x0: 0, x1: L, m: mDial, b: { fixed: y0 } }],
+      joints: [],
+      objects: [{ kind: 'gate', id: 'g1', x: xa, y: ya, tol: 0.2 }, { kind: 'gate', id: 'g2', x: xb, y: yb, tol: 0.2 }],
+      finish: { x: L, y: ye, tol: 0.3, look: 'hut' },
+    }, 'עברו בשני השערים — שיפוע אחד, בדיוק.');
+  }
+  if (world === 2) {
+    // Given drop A; your B has a fixed slope and must reach the hut, joining A inside the zone.
+    const mA = pick(r, [-1, -1.25, -1.5]);
+    const bA = pick(r, [24, 28, 30, 32]);
+    const mB = pick(r, [-0.25, -0.5]);
+    const xh = pick(r, [32, 36, 40, 44]);
+    const bB = -mB * xh;
+    const xj = (bB - bA) / (mA - mB);
+    if (!(xj > 4 && xj < xh - 8) || !isHalf(bB)) return null;
+    const z0 = Math.floor(xj) - 2, z1 = Math.floor(xj) + 2;
+    return lv({ x1: xh + 4, y1: bA + 4 }, {
+      segments: [
+        { id: 'a', name: 'הירידה הנתונה', x0: 0, x1: z1, m: { fixed: mA }, b: { fixed: bA }, given: true },
+        { id: 'b', name: 'אל הבקתה', x0: z0, x1: xh, m: { fixed: mB }, b: { min: -5, max: 40, step: 0.5, initial: 8 } },
+      ],
+      joints: [{ zone: [z0, z1] }],
+      objects: [],
+      finish: { x: xh, y: 0, tol: 0.25, look: 'hut' },
+    }, 'חברו קטע שני שיגיע לבקתה — והמפרק חייב ליפול באזור החיבור.');
+  }
+  if (world === 3) {
+    // Drop-in ramp to speed up, then your line y = m x + b0 above a rising ridge and below a cornice.
+    const b0 = pick(r, [14, 16, 18]);
+    const L = pick(r, [20, 24, 28]);
+    const mr = pick(r, [0.25, 0.5]);
+    const br = pick(r, [1, 2, 3]);
+    const c = b0 + pick(r, [1, 2, 3]);
+    return lv({ x0: -8, x1: L + 4, y0: 0, y1: Math.max(b0 + 8, c + 4) }, {
+      segments: [
+        { id: 'a', name: 'זינוק פתיחה', x0: -8, x1: 0, m: { fixed: -1 }, b: { fixed: b0 }, given: true },
+        { id: 'b', name: 'בין הרכס לכרכוב', x0: 0, x1: L, m: { min: -1.5, max: 1, step: 0.05, initial: -1 }, b: { fixed: b0 }, launch: true },
+      ],
+      joints: [{ zone: [-0.5, 0.5] }],
+      objects: [
+        { kind: 'constraint', id: 'ridge', side: 'above', m: mr, b: br, x0: 0, x1: L, look: 'ridge' },
+        { kind: 'constraint', id: 'cornice', side: 'below', m: 0, b: c, x0: 0, x1: L, look: 'cornice' },
+      ],
+      finish: { x: L, y: (mr * L + br + c) / 2, tol: (c - (mr * L + br)) / 2 + 0.01, look: 'powder' },
+    }, 'מעל הרכס העולה ומתחת לכרכוב לאורך כל הדרך.');
+  }
+  // world 4: ghost line shown only as a graph; ride parallel to it, exactly one lane lower, through a gate.
+  const mg = pick(r, [-0.25, -0.5, -0.75]);
+  const bg = pick(r, [24, 26, 28]);
+  const gap = pick(r, [3, 4, 5]);
+  const L = pick(r, [24, 28, 32]);
+  const xg = pick(r, [8, 12, 16]);
+  const bYou = bg - gap;
+  const yg = mg * xg + bYou;
+  const ye = mg * L + bYou;
+  if (ye < 0 || !isHalf(yg) || !isHalf(ye) || !isHalf(mg * 4 + bg)) return null;
+  return lv({ x1: L + 4, y1: bg + 4 }, {
+    segments: [{ id: 'a', x0: 0, x1: L, m: { min: -2, max: 1, step: 0.05, initial: 0 }, b: { min: 0, max: 34, step: 0.5, initial: 10 } }],
+    joints: [],
+    objects: [{ kind: 'gate', id: 'g', x: xg, y: yg, tol: 0.2 }],
+    rival: { who: 'ghost', m: mg, b: bg, x0: 0, x1: L, goal: 'parallel', graphOnly: true },
+    finish: { x: L, y: ye, tol: 0.3, look: 'hut' },
+  }, 'גלשו במקביל למסלול הרוח (קראו את הישר שלו מהגרף) ועברו בשער.');
+}
+
+/** A verified expert run (no hints). Unique or very narrow solution; "always m = −1" fails. */
+export function generateExpert(world: 1 | 2 | 3 | 4, seed: number): LevelSpec {
+  const r = rng(seed * 104729 + world * 31);
+  for (let tries = 0; tries < 600; tries++) {
+    const lv = buildExpert(world, r);
+    if (!lv) continue;
+    const st = lv.stages[0];
+    const sols = solveEditable(st);
+    if (sols.length === 0 || sols.length > 4) continue;
+    const idx = st.segments.findIndex((s) => !s.given && (s.m.fixed === undefined || s.b.fixed === undefined));
+    const always = sols[0].map((q, i) => (i === idx && st.segments[i].m.fixed === undefined ? { ...q, m: -1 } : q));
+    if (st.segments[idx].m.fixed === undefined && simulateRide(st, always).ok) continue;
+    return lv;
+  }
+  throw new Error(`could not generate an expert run for world ${world}`);
+}
+
 /** A verified fresh run for a world. Deterministic for a given seed. */
 export function generateRun(world: 1 | 2 | 3 | 4, seed: number): LevelSpec {
   const r = rng(seed * 7919 + world);

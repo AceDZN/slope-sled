@@ -22,3 +22,18 @@ for (const world of [1, 2, 3, 4] as const) {
 test('generation is deterministic per seed', () => {
   assert.deepEqual(generateRun(2, 5), generateRun(2, 5));
 });
+
+import { generateExpert, solveEditable } from '../src/math/generate.ts';
+
+for (const world of [1, 2, 3, 4] as const) {
+  test(`expert runs for world ${world}: solvable, narrow, no hints, "always m = −1" fails`, () => {
+    for (let seed = 1; seed <= 8; seed++) {
+      const lv = generateExpert(world, seed);
+      assert.equal(lv.noHints, true);
+      const st = lv.stages[0];
+      const sols = solveEditable(st);
+      assert.ok(sols.length >= 1 && sols.length <= 4, `world ${world} seed ${seed}: ${sols.length}`);
+      for (const s of sols) assert.equal(simulateRide(st, s).ok, true);
+    }
+  });
+}
