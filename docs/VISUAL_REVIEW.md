@@ -69,12 +69,11 @@
 
 ## 5. Level select
 
-- **Matches the target:**
-  - Wooden plank cards in a cozy hut style, one per world, with Hebrew world titles and subtitles.
-  - Numbered flags in green (done) or blue (current), padlocked grey for locked levels, gold stars, a ⛰ mark on transfer levels, and a big orange "שחקו" button bottom-left.
-  - Total stars and snowflakes in a pill.
-  - Each world has a fresh-run ❄ "ריצה חדשה" entry that unlocks after its transfer level.
-- **Remaining deviation (largest one):** the mockup is a full 3D diorama with flags placed along a winding trail on the mountain. Ours is a 4-column DOM map over the live 3D scene. It's readable and touch-friendly but less magical. This is the first candidate for a polish pass.
+- **First version (fixed):** a 4-column DOM card map over the 3D scene. It was the largest deviation, so it was rebuilt.
+- **Now:** a 3D diorama of Hermon, viewed from an elevated angle, with a glowing trail that zig-zags from the hut at the foot (level 1) up to the summit (level 18). Each level is a 3D flag colored by state: green done, blue glowing current, grey locked. Clickable flag labels show the number or a padlock plus gold stars. The four worlds have wooden signs.
+- **Kept from the target:** the total stars and snowflakes pill, a big orange "שחקו" button (bottom-left) and a "השלב הבא" info card. ❄ "ריצה חדשה" buttons appear once a world's transfer level is cleared.
+- A collapsible "רשימת שלבים" list keeps every level reachable by keyboard and on small screens.
+- **Remaining deviation:** no kid standing at the current flag, and the summit flags crowd together a little at this camera angle.
 
 ## Typography and RTL
 
