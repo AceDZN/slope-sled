@@ -35,6 +35,8 @@ export interface Hazard {
   /** Constraint details for explanations. */
   constraint?: ConstraintSpec;
   joint?: { reason: 'outside' | 'parallel'; solutionX?: number; zone: [number, number] };
+  /** For inequalities: where the track breaks the rule the most (used for the worked explanation). */
+  worst?: { x: number; trackY: number; needY: number };
 }
 
 /** Rival-line outcome for races (level 15/16): where you meet, if anywhere. */
@@ -78,6 +80,28 @@ export function firstViolation(track: Track, c: ConstraintSpec): { x: number; se
     }
   }
   return null;
+}
+
+/** The checked x (piece ends inside the rule's interval) where the track is furthest on the wrong side. */
+export function worstViolation(track: Track, c: ConstraintSpec): { x: number; trackY: number; needY: number } {
+  const sign = c.side === 'above' ? 1 : -1;
+  let best = { x: c.x0, trackY: trackY(track, c.x0), needY: c.m * c.x0 + c.b };
+  let bestF = Infinity;
+  for (const p of track.pieces) {
+    const u = Math.max(p.xa, c.x0);
+    const w = Math.min(p.xb, c.x1);
+    if (u > w + TINY) continue;
+    for (const x of [u, w]) {
+      const ty = p.line.m * x + p.line.b;
+      const ny = c.m * x + c.b;
+      const f = sign * (ty - ny);
+      if (f < bestF - TINY) {
+        bestF = f;
+        best = { x, trackY: ty, needY: ny };
+      }
+    }
+  }
+  return best;
 }
 
 function gateHazard(track: Track, g: GateSpec): Hazard | null {
@@ -138,6 +162,7 @@ export function judge(stage: StageSpec, params: StageParams): Judgement {
           objectId: o.id,
           seg: v.seg,
           constraint: o,
+          worst: worstViolation(track, o),
         });
       }
     }

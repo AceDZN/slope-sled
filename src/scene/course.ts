@@ -259,23 +259,26 @@ export class Course {
         this.staticGroup.add(rock);
       }
     } else if (c.look === 'branch') {
-      const trunkX = c.x0 - 0.8;
-      const pine = this.assets.pine(Math.max(c.b + 6, 16));
-      pine.position.set(trunkX, 0, -3.2);
+      // A pine well behind the course with one long limb reaching over the track; the limb's underside is the boundary.
+      const by = Math.max(c.m * c.x0 + c.b, c.m * c.x1 + c.b);
+      const trunk = new THREE.Vector3(c.x0 - 1.2, by, -7);
+      const pine = this.assets.pine(by + 4.5);
+      pine.position.set(trunk.x, 0, trunk.z);
       this.staticGroup.add(pine);
-      const branchLen = c.x1 - c.x0 + 1.2;
-      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.32, branchLen, 7), this.woodMat);
-      branch.rotation.z = Math.PI / 2;
-      const by = Math.max(c.m * c.x0 + c.b, c.m * c.x1 + c.b) + 0.3;
-      branch.position.set((c.x0 + c.x1) / 2, by, -0.6);
-      branch.rotation.x = 0.35;
-      const needles = new THREE.Mesh(new THREE.ConeGeometry(1.1, branchLen, 7), std(COLORS.pine, { flatShading: true }));
+      const tip = new THREE.Vector3((c.x0 + c.x1) / 2, by + 0.3, 0.6);
+      const len = trunk.distanceTo(tip);
+      const limb = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.3, len, 7), this.woodMat);
+      limb.position.copy(trunk).add(tip).multiplyScalar(0.5);
+      limb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tip.clone().sub(trunk).normalize());
+      limb.castShadow = true;
+      const span = c.x1 - c.x0 + 1.2;
+      const needles = new THREE.Mesh(new THREE.ConeGeometry(0.9, span, 7), std(COLORS.pine, { flatShading: true }));
       needles.rotation.z = Math.PI / 2;
-      needles.position.set((c.x0 + c.x1) / 2, by + 0.35, -0.6);
-      const snowTop = new THREE.Mesh(new THREE.BoxGeometry(branchLen * 0.9, 0.25, 1.2), this.snowMat);
-      snowTop.position.set((c.x0 + c.x1) / 2, by + 0.9, -0.6);
-      branch.castShadow = needles.castShadow = true;
-      this.staticGroup.add(branch, needles, snowTop);
+      needles.position.set((c.x0 + c.x1) / 2, by + 0.95, 0);
+      const snowTop = new THREE.Mesh(new THREE.BoxGeometry(span * 0.9, 0.25, 1.1), this.snowMat);
+      snowTop.position.set((c.x0 + c.x1) / 2, by + 1.5, 0);
+      needles.castShadow = true;
+      this.staticGroup.add(limb, needles, snowTop);
     } else if (c.look === 'bridge' || c.look === 'cornice') {
       const yA = c.m * c.x0 + c.b;
       const yB = c.m * c.x1 + c.b;

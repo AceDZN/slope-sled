@@ -51,19 +51,27 @@ export function explain(outcome: RideOutcome, stage: StageSpec): Explanation {
   switch (h.kind) {
     case 'rocks': {
       const c = h.constraint!;
+      const w = h.worst ?? { x: h.x, trackY: h.trackY, needY: h.needY };
+      const x = ltr(`x = ${num(w.x, 2)}`);
+      const you = ltr(`y = ${num(w.trackY, 2)}`);
+      const need = ltr(`y = ${num(w.needY, 2)}`);
       const op = c.strict ? '>' : '≥';
       const rhs = equation(c.m, c.b).replace('y = ', '');
       return mk('אופס!', c.look === 'ridge' ? 'פגעתם ברכס הסלעים' : 'נתקעתם בסלע', [['המסלול', you, 'bad'], ['הסלע', need, 'need']],
-        `ב־${x} המסלול שלכם בגובה ${ltr(num(h.trackY, 2))}, והסלעים מגיעים עד ${ltr(num(h.needY, 2))}. המסלול צריך לקיים ${ltr(`y ${op} ${rhs}`)} — לעבור מעל.`);
+        `ב־${x} המסלול שלכם בגובה ${ltr(num(w.trackY, 2))}, והסלעים מגיעים עד ${ltr(num(w.needY, 2))}. המסלול צריך לקיים ${ltr(`y ${op} ${rhs}`)} — לעבור מעל.`);
     }
     case 'branch': {
       const c = h.constraint!;
+      const w = h.worst ?? { x: h.x, trackY: h.trackY, needY: h.needY };
+      const x = ltr(`x = ${num(w.x, 2)}`);
+      const you = ltr(`y = ${num(w.trackY, 2)}`);
+      const need = ltr(`y = ${num(w.needY, 2)}`);
       const op = c.strict ? '<' : '≤';
       const rhs = equation(c.m, c.b).replace('y = ', '');
       const what = { branch: 'נתקעתם בענף', bridge: 'התנגשתם בגשר הקרח', avalanche: 'נכנסתם לאזור המפולת', cornice: 'התנגשתם בכרכוב השלג' }[c.look as string] ?? 'התנגשתם';
       const thing = { branch: 'הענף', bridge: 'הגשר', avalanche: 'גבול המפולת', cornice: 'הכרכוב' }[c.look as string] ?? 'הגבול';
       return mk('אופס!', what, [['המסלול', you, 'bad'], [thing, need, 'need']],
-        `ב־${x} המסלול שלכם בגובה ${ltr(num(h.trackY, 2))}, ו${thing} בגובה ${ltr(num(h.needY, 2))}. המסלול צריך לקיים ${ltr(`y ${op} ${rhs}`)} — לעבור מתחת${c.strict ? ' (לא לגעת)' : ''}.`);
+        `ב־${x} המסלול שלכם בגובה ${ltr(num(w.trackY, 2))}, ו${thing} בגובה ${ltr(num(w.needY, 2))}. המסלול צריך לקיים ${ltr(`y ${op} ${rhs}`)} — לעבור מתחת${c.strict ? ' (לא לגעת)' : ''}.`);
     }
     case 'gate-high':
     case 'gate-low':

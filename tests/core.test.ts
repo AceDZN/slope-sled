@@ -36,3 +36,12 @@ test('level 2: −0.75 passes the flag; +0.75 refuses to climb; −0.7 misses th
   const near = simulateRide(st, [{ m: -0.7, b: 24 }]);
   assert.equal(!near.ok && near.reason === 'hazard' && near.hazard.kind, 'gate-high');
 });
+
+test('wipeout explanation reports the worst point, not the touching point', async () => {
+  const { judge } = await import('../src/math/judge.ts');
+  const st = levelById(11).stages[0];
+  const h = judge(st, [{ m: -0.5, b: 7 }]).first!;
+  assert.equal(h.kind, 'rocks');
+  assert.equal(h.x, 6); // the track dips below the rocks right after x = 6
+  assert.deepEqual(h.worst, { x: 16, trackY: -1, needY: 4 });
+});
