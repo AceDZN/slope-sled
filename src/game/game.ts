@@ -230,7 +230,7 @@ export class Game {
 
   setMode(m: Mode): void {
     this.mode = m;
-    if (m === 'select') this.refreshMap();
+    if (m === 'select' || m === 'title') this.refreshMap();
     // Hero scale in the wide build/replay views so the kid and dog read like the mockups; true scale while riding.
     const hero = m === 'build' || m === 'title' || m === 'select' ? 2 : 1;
     this.rider?.root.scale.setScalar(hero);
@@ -524,7 +524,7 @@ export class Game {
     this.modeT += dtReal;
     const dt = dtReal * this.timeScale;
     const cam = this.world.camera;
-    if (this.mode === 'select') {
+    if (this.mode === 'select' || this.mode === 'title') {
       const pose = this.map.cameraPose(this.modeT);
       const k = this.modeT < 0.05 ? 1 : Math.min(1, dtReal * 3);
       cam.clearViewOffset();
@@ -533,9 +533,9 @@ export class Game {
       this.camLook.lerp(pose.look, k);
       cam.lookAt(this.camLook);
       cam.updateProjectionMatrix();
-    } else if (this.mode === 'build' || this.mode === 'title') {
-      this.course.setGridOpacity(this.mode === 'build' ? 1 : 0);
-      this.frameBuild(dtReal, this.mode !== 'build');
+    } else if (this.mode === 'build') {
+      this.course.setGridOpacity(1);
+      this.frameBuild(dtReal, false);
     } else if (this.mode === 'swoop') {
       const k = Math.min(1, this.modeT / 1.3);
       const e = k * k * (3 - 2 * k);
@@ -577,7 +577,7 @@ export class Game {
     this.fx.update(dt);
     this.course.update(dtReal);
     this.world.update(dtReal);
-    this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.mode === 'select' ? this.map.cameraPose(0).look : this.viewCenter());
+    this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.mode === 'select' || this.mode === 'title' ? this.map.cameraPose(0).look : this.viewCenter());
     if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title' || this.mode === 'select';
     this.labels.only = this.mode === 'select' ? ['map:'] : [];
   }
