@@ -909,6 +909,17 @@ export class Game {
   private refreshMap(): void {
     if (!this.map) return;
     const cur = this.currentLevelId();
+    // The kid and dog wait at the current flag.
+    const f = this.map.flags.find((x) => x.id === cur);
+    if (f && this.rider) {
+      const base = f.pos.clone().add(new THREE.Vector3(1.8, -5.2, 2.2));
+      this.rider.root.position.copy(base);
+      this.rider.root.rotation.set(0, -0.6, 0);
+      this.rider.setPose('cheer');
+      this.dog.root.position.copy(base).add(new THREE.Vector3(1.6, 0, 0.8));
+      this.dog.root.rotation.set(0, -1.2, 0);
+      this.dog.setPose('sit');
+    }
     this.labels.clear('map:');
     for (const f of this.map.flags) {
       const l = levelById(f.id);
