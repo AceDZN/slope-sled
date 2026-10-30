@@ -352,18 +352,19 @@ export class Course {
   private buildFinish(): void {
     const f = this.stage.finish;
     const hut = this.assets.hut();
-    hut.position.set(f.x + 4.2, f.y, f.y > 0.3 ? -4.6 : -2.6);
+    // Past the cliff board's right edge (visible while building), beyond where the finish hop lands.
+    hut.position.set(Math.max(f.x + 7.5, this.level.view.x1 + 7.5), f.y, -2.2);
     hut.rotation.y = -0.35;
     this.staticGroup.add(hut);
     if (f.y > 0.3) {
-      const plat = new THREE.Mesh(new THREE.BoxGeometry(12, f.y, 5), this.snowMat);
-      plat.position.set(f.x + 5.5, f.y / 2, -4.6);
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(14, f.y, 10), this.snowMat);
+      plat.position.set(f.x + 6, f.y / 2, -3.5);
       plat.receiveShadow = true;
       this.staticGroup.add(plat);
     }
     const pile = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), this.snowMat);
-    pile.scale.set(1.2, 0.35, 1.0);
-    pile.position.set(f.x + 2.2, f.y, -3);
+    pile.scale.set(1.6, 0.22, 1.1);
+    pile.position.set(f.x + 3.8, f.y, 0.3);
     this.staticGroup.add(pile);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.08, 8, 32), new THREE.MeshBasicMaterial({ color: COLORS.gold }));
     ring.position.set(f.x, f.y, GRID_Z + 0.06);

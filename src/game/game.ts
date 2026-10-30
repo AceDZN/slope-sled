@@ -463,7 +463,7 @@ export class Game {
     } else if (sim.outcome && sim.done) {
       if (sim.outcome.ok && !this.hopDone && sim.outcome.airTime === 0) {
         // Pop off the kicker at the hut: an air moment (and a trick) on every successful run.
-        this.hop = { t: 0, x: s.x, y: s.y + 0.3, vx: Math.max(4, s.v * Math.cos(s.angle)), vy: Math.max(4.2, s.v * 0.32), landY: this.stage.finish.y };
+        this.hop = { t: 0, x: s.x, y: s.y + 0.3, vx: Math.min(5, Math.max(3.5, s.v * Math.cos(s.angle))), vy: Math.max(4.4, Math.min(6, s.v * 0.35)), landY: this.stage.finish.y };
         this.sound.whoosh();
         return;
       }
