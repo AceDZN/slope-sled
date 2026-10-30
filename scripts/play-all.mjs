@@ -15,7 +15,7 @@ const out = process.argv[2];
 const only = process.argv.slice(3).map(Number);
 fs.mkdirSync(out, { recursive: true });
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+const page = await browser.newPage({ viewport: { width: Number(process.env.W ?? 960), height: Number(process.env.H ?? 600) } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
@@ -40,21 +40,29 @@ for (const [id, stages] of Object.entries(SOL)) {
       if (s.segments.length > 1) await page.keyboard.press(String(k + 1));
       for (const [key, idx, up, down] of [['m', 0, 'ArrowUp', 'ArrowDown'], ['b', 1, 'ArrowRight', 'ArrowLeft']]) {
         if (t[idx] === null || t[idx] === undefined || !seg.editable[key]) continue;
-        for (let guard = 0; guard < 400; guard++) {
-          s = await st();
-          const cur = s.segments[k][key];
-          const chosen = s.segments[k].chosen;
-          if (Math.abs(cur - t[idx]) < 1e-6 && chosen) break;
-          if (s.segments.length === 1 && s.segments[0].choices && key === 'm') {
-            await page.keyboard.press(String(s.segments[0].choices.indexOf(t[idx]) + 1));
-            continue;
-          }
-          await page.keyboard.press(cur < t[idx] || !chosen && cur === t[idx] ? up : down);
+        if (key === 'm' && s.segments.length === 1 && s.segments[0].choices) {
+          await page.keyboard.press(String(s.segments[0].choices.indexOf(t[idx]) + 1));
+          continue;
         }
+        if (key === 'm' && seg.choices) {
+          // Choice lists cycle with ↑/↓ from the current option.
+          for (let g = 0; g < 8; g++) {
+            s = await st();
+            if (Math.abs(s.segments[k].m - t[idx]) < 1e-6 && s.segments[k].chosen) break;
+            await page.keyboard.press(s.segments[k].choices.indexOf(s.segments[k].m) < seg.choices.indexOf(t[idx]) ? up : down);
+          }
+          continue;
+        }
+        // Dials: press the exact number of steps (0.05 for m, 0.5 for b), then verify.
+        const step = key === 'm' ? 0.05 : 0.5;
+        const n = Math.round((t[idx] - seg[key]) / step);
+        for (let p = 0; p < Math.abs(n); p++) await page.keyboard.press(n > 0 ? up : down);
+        s = await st();
+        if (Math.abs(s.segments[k][key] - t[idx]) > 1e-6) console.log(`WARN level ${id} seg ${k} ${key}: got ${s.segments[k][key]} want ${t[idx]}`);
       }
     }
     await adv(200);
-    if (si === 0) await page.screenshot({ path: `${out}/L${id}-build.png` });
+    if (si === 0 && process.env.SHOTS) await page.screenshot({ path: `${out}/L${id}-build.png` });
     s = await st();
     await page.keyboard.press('Enter');
     for (let i = 0; i < 60 && (await st()).mode !== 'result'; i++) await adv(500);
@@ -62,7 +70,9 @@ for (const [id, stages] of Object.entries(SOL)) {
     outcome = s.outcome;
     if (si === stages.length - 1 || outcome !== 'success') {
       await page.screenshot({ path: `${out}/L${id}-result.png` });
-      results.push({ id: Number(id), stage: si + 1, outcome, params: s.segments.map((x) => x.equation), explanation: outcome === 'success' ? '' : s.explanation });
+      const r = { id: Number(id), stage: si + 1, outcome, rideTime: s.ride?.t, params: s.segments.map((x) => x.equation), explanation: outcome === 'success' ? '' : s.explanation };
+      results.push(r);
+      console.log('RESULT', JSON.stringify(r));
       break;
     }
     await page.click('[data-a=next]');
