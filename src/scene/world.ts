@@ -45,7 +45,7 @@ export class World {
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 900);
-    this.scene.fog = new THREE.Fog(COLORS.horizon, 120, 420);
+    this.scene.fog = new THREE.Fog(COLORS.horizon, 160, 620);
 
     // Sky dome with a vertical gradient and a sun glow.
     this.skyMat = new THREE.ShaderMaterial({
@@ -63,7 +63,7 @@ export class World {
         void main(){ float h = vDir.y; vec3 c = h > 0.15 ? mix(mid, top, smoothstep(0.15, 0.8, h)) : mix(bottom, mid, smoothstep(-0.05, 0.15, h));
         float s = max(dot(normalize(vDir), sunDir), 0.0); c += sunColor * (pow(s, 64.0) * 0.9 + pow(s, 6.0) * 0.18); gl_FragColor = vec4(c, 1.0); }`,
     });
-    const sky = new THREE.Mesh(new THREE.SphereGeometry(800, 32, 16), this.skyMat);
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(850, 32, 16), this.skyMat);
     sky.frustumCulled = false;
     this.scene.add(sky);
 
@@ -112,7 +112,7 @@ export class World {
     for (let i = 0; i < fp.count; i++) {
       const x = fp.getX(i), z = fp.getZ(i);
       const away = Math.max(0, Math.abs(z) - 14) / 60;
-      const h = Math.sin(x * 0.05) * Math.cos(z * 0.07) * 1.4 * Math.min(1, away) + Math.max(0, -z - 30) * 0.18;
+      const h = Math.sin(x * 0.05) * Math.cos(z * 0.07) * 1.4 * Math.min(1, away) + Math.max(0, -z - 60) * 0.06;
       fp.setY(i, h - 0.05);
     }
     floorGeo.computeVertexNormals();
@@ -125,7 +125,7 @@ export class World {
     const rockMat = new THREE.MeshStandardMaterial({ color: 0x6f7f9c, roughness: 1, flatShading: true });
     const capMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, flatShading: true });
     const peaks: Array<[number, number, number, number]> = [
-      [-60, -230, 120, 95], [10, -260, 150, 140], [90, -240, 110, 100], [160, -270, 140, 120], [-130, -270, 130, 110], [230, -250, 100, 80],
+      [-80, -330, 80, 95], [10, -360, 105, 140], [100, -340, 75, 100], [180, -370, 95, 120], [-160, -370, 85, 110], [260, -350, 70, 80],
     ];
     for (const [x, z, h, r] of peaks) {
       const cone = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7, 3), rockMat);

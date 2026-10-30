@@ -399,7 +399,7 @@ export class Course {
     this.rideScenery.visible = false;
     for (let i = 0; i < 3; i++) {
       const py = this.assets.pylon();
-      py.position.set(x0 + 6 + i * ((x1 - x0) / 2.2), 0, -42);
+      py.position.set(x0 + 6 + i * ((x1 - x0) / 2.2), 0, -62);
       back.push(py);
     }
     this.staticGroup.add(...back);
@@ -409,7 +409,7 @@ export class Course {
     for (let i = 0; i < 2; i++) {
       const a = x0 + 6 + i * ((x1 - x0) / 2.2);
       const b = a + (x1 - x0) / 2.2;
-      cp.push(a, 15.5, -42, b, 15.5, -42);
+      cp.push(a, 15.5, -62, b, 15.5, -62);
     }
     cg.setAttribute('position', new THREE.Float32BufferAttribute(cp, 3));
     this.staticGroup.add(new THREE.LineSegments(cg, new THREE.LineBasicMaterial({ color: 0x333a44 })));
@@ -436,6 +436,7 @@ export class Course {
         const mist = this.mist(p.line.m, p.line.b, xb, color);
         this.trackGroup.add(mist);
       }
+      if (ghost) this.trackGroup.add(this.dashes(p.line.m, p.line.b, xa, xb));
       if (o.mode !== 'ride') {
         // Thin glowing line on the grid for the drawn part.
         const g = new THREE.BufferGeometry();
@@ -478,6 +479,23 @@ export class Course {
     g.add(body);
     g.position.set((xa + xb) / 2, (ya + yb) / 2, 0);
     g.rotation.z = ang;
+    return g;
+  }
+
+  /** Bright dashed preview line (tutorial levels only). */
+  private dashes(m: number, b: number, xa: number, xb: number): THREE.Group {
+    const g = new THREE.Group();
+    const ang = Math.atan(m);
+    const len = (xb - xa) / Math.cos(ang);
+    const n = Math.floor(len / 1.4);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x9ff3ff });
+    for (let i = 0; i < n; i++) {
+      const x = xa + ((i + 0.5) / n) * (xb - xa);
+      const d = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.22, 0.22), mat);
+      d.position.set(x, m * x + b + 0.35, GRID_Z + 0.4);
+      d.rotation.z = ang;
+      g.add(d);
+    }
     return g;
   }
 

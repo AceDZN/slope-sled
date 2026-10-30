@@ -194,7 +194,7 @@ export class Game {
     this.rider.setPose('idle');
     this.dog.setPose('sit');
     if (!this.stage.rival || this.stage.rival.who !== 'dog') {
-      this.dog.root.position.set(tr.x0 - 1.4, y0, 0.9);
+      this.dog.root.position.set(tr.x0 - 2.4, y0, 0.9);
       this.dog.root.rotation.set(0, 0, 0);
     } else this.placeRivalAt(this.stage.rival.x0);
     if (this.rivalSled && this.stage.rival) this.placeRivalAt(this.stage.rival.x0);
@@ -219,6 +219,10 @@ export class Game {
 
   setMode(m: Mode): void {
     this.mode = m;
+    // Hero scale in the wide build/replay views so the kid and dog read like the mockups; true scale while riding.
+    const hero = m === 'build' || m === 'title' || m === 'select' ? 2 : 1;
+    this.rider?.root.scale.setScalar(hero);
+    this.dog?.root.scale.setScalar(hero);
     if (this.course) this.course.rideScenery.visible = m === 'ride' || m === 'swoop' || (m === 'crash' && !!this.outcome?.ok);
     this.modeT = 0;
     this.renderHud();
@@ -651,7 +655,7 @@ export class Game {
     const d = Math.max((bh / 2) / t * (H / Math.max(1, availH)), (bw / 2) / (t * aspect) * (H / Math.max(1, availH))) * 1.02;
     const center = new THREE.Vector3((v.x0 + v.x1) / 2 + 1.5, (v.y0 + v.y1) / 2 + 1.2 - (this.mode === 'build' && this.els.choices && !narrow ? bh * 0.06 : 0), 0);
     const yaw = drift ? Math.sin(this.modeT * 0.15) * 0.25 : -0.12;
-    const dir = new THREE.Vector3(Math.sin(yaw), 0.3, Math.cos(yaw)).normalize();
+    const dir = new THREE.Vector3(Math.sin(yaw), 0.17, Math.cos(yaw)).normalize();
     const want = center.clone().addScaledVector(dir, d);
     const k = this.modeT < 0.05 ? 1 : Math.min(1, dt * 3.5);
     cam.position.lerp(want, k);
