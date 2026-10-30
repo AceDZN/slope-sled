@@ -204,3 +204,5 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
 .chips { display: flex; gap: 6px; flex: 1; justify-content: flex-start; direction: ltr; flex-wrap: wrap; }
 .chip { min-width: 52px; padding: 8px 6px; border-radius: 10px; background: linear-gradient(180deg, #ffffff, #d6e5ff); color: var(--ink); font-size: 18px; font-weight: 700; box-shadow: 0 3px 0 #8aa7d6; border: 2px solid transparent; }
 .chip.on { border-color: var(--orange); background: linear-gradient(180deg, #fff6ea, #ffd9b0); }
+.eqrow { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 18px; font-weight: 700; }
+.eqrow .seg-tag { width: 24px; height: 24px; font-size: 13px; }

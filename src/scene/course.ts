@@ -325,8 +325,8 @@ export class Course {
       this.staticGroup.add(plat);
     }
     const pile = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), this.snowMat);
-    pile.scale.set(1.4, 0.5, 1.2);
-    pile.position.set(f.x + 1.6, f.y, 0);
+    pile.scale.set(1.2, 0.35, 1.0);
+    pile.position.set(f.x + 2.2, f.y, -3);
     this.staticGroup.add(pile);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.08, 8, 32), new THREE.MeshBasicMaterial({ color: COLORS.gold }));
     ring.position.set(f.x, f.y, GRID_Z + 0.06);

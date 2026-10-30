@@ -863,7 +863,7 @@ export class Game {
       const nextLabel = this.generated ? 'ריצה חדשה' : last ? (LEVELS.some((l) => l.id === this.level.id + 1) ? 'לשלב הבא' : 'למפה') : 'למרוץ הבא';
       return `<div class="result win"><h1>${last ? 'יש!' : 'הצלחה!'}</h1><h2>${last ? 'הגעתם לבקתה' : `מקטע ${this.stageIdx + 1} מתוך ${this.level.stages.length}`}</h2>
         ${last ? `<div class="bigstars">${stars}</div>` : ''}
-        <div class="box"><div class="txt">המסלול: ${this.params.map((p, i) => `<div>${i + 1}. ${ltr(equation(p.m, p.b))}</div>`).join('')}
+        <div class="box"><div class="txt">המסלול שלכם:${this.params.map((p, i) => `<div class="eqrow"><span class="seg-tag" style="--c:${SEG_CSS[i % 4]}">${i + 1}</span> ${ltr(equation(p.m, p.b))}</div>`).join('')}
         <div class="meta" style="color:#4b5b80">ניסיונות: ${ltr(String(this.builds))}${this.hintUsed ? ' · השתמשתם ברמז' : ''} · ❄ ${ltr(String(this.flakes))}${this.tricks ? ` · טריקים: ${ltr(String(this.tricks))}` : ''}</div></div></div>
         <div class="btns"><button class="btn primary" data-a="next">${nextLabel}</button><button class="btn secondary" data-a="retry">שוב</button></div></div>`;
     }
