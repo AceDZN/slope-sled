@@ -45,7 +45,7 @@ export class TrailMap {
       const t = i / (N - 1);
       // Serpentine down the front face, from the summit (t = 0) to the valley (t = 1).
       const r = 6 + t * 54;
-      const x = Math.sin(t * Math.PI * 3.2) * (5 + t * 30);
+      const x = Math.sin(t * Math.PI * 3.2) * (13 + t * 24);
       const z = -22 + r * 0.9;
       pts.push(new THREE.Vector3(x, 0, z));
     }
@@ -73,6 +73,10 @@ export class TrailMap {
     for (let w = 1; w <= 4; w++) {
       const f = this.flags.filter((x) => x.world === w);
       const c = f.reduce((a, x) => a.add(x.pos), new THREE.Vector3()).multiplyScalar(1 / f.length);
+      // Signs stand beside their stretch of trail, alternating sides so they never cover the flags.
+      const minX = Math.min(...f.map((x) => x.pos.x)), maxX = Math.max(...f.map((x) => x.pos.x));
+      c.x = w % 2 ? minX - 16 : maxX + 16;
+      c.y -= 4;
       this.worldCenters.push(c);
     }
     // Forest and a hut at the foot of the trail.

@@ -1054,7 +1054,8 @@ export class Game {
       const s = this.progress.stars[f.id] ?? 0;
       this.map.setState(f.id, !un ? 'locked' : f.id === cur && s === 0 ? 'current' : s > 0 ? 'done' : 'current');
       const stars = `<span class="fs">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</span>`;
-      this.labels.set(`map:f${f.id}`, f.pos, `<button class="mapflag ${un ? '' : 'locked'} ${f.id === cur ? 'current' : ''}" data-a="level" data-i="${f.id}" ${un ? '' : 'disabled'} title="${l.title}"><b>${un ? f.id : '🔒'}</b>${stars}</button>`, 'lbl map-lbl');
+      const dif = LEVEL_DIFFICULTY[f.id] ?? 'medium';
+      this.labels.set(`map:f${f.id}`, f.pos, `<button class="mapflag ${un ? '' : 'locked'} ${f.id === cur ? 'current' : ''} d-${dif}" data-a="level" data-i="${f.id}" ${un ? '' : 'disabled'} title="${l.title} · ${DIFFICULTY_LABEL[dif]}"><b>${un ? f.id : '🔒'}</b>${stars}</button>`, 'lbl map-lbl');
     }
     this.map.worldCenters.forEach((c, i) => {
       const w = i + 1;
@@ -1092,7 +1093,7 @@ export class Game {
     const curL = levelById(cur);
     return `<div class="select"><div class="top"><h1>⛰ מפת החרמון</h1><div class="pill"><div class="lvname">★ ${ltr(String(total))} / ${ltr(String(LEVELS.length * 3))} · ❄ ${ltr(String(this.progress.flakes))}</div></div></div>
       <details class="worlds-list"><summary>רשימת שלבים</summary><div class="worlds">${worlds}</div></details>
-      <div class="bottom"><div class="info"><b>השלב הבא: ${curL.id} · ${curL.title}</b><br>${ltr('x')} גדל משמאל לימין גם בממשק בעברית · שיפוע שלילי = ירידה</div><div class="fresh-row">${freshBtns}</div><button class="btn primary" style="flex:none;min-width:180px" data-a="level" data-i="${cur}">שחקו</button></div></div>`;
+      <div class="bottom"><div class="info"><b>השלב הבא: ${curL.id} · ${curL.title}</b> <span class="diff diff-${LEVEL_DIFFICULTY[curL.id] ?? 'medium'}">${DIFFICULTY_LABEL[LEVEL_DIFFICULTY[curL.id] ?? 'medium']}</span><br>${ltr('x')} גדל משמאל לימין גם בממשק בעברית · שיפוע שלילי = ירידה<div class="legend">${(['easy', 'medium', 'hard', 'transfer', 'final', 'expert'] as Difficulty[]).map((d) => `<span class="diff diff-${d}">${DIFFICULTY_LABEL[d]}</span>`).join('')}</div></div><div class="fresh-row">${freshBtns}</div><button class="btn primary" style="flex:none;min-width:180px" data-a="level" data-i="${cur}">שחקו</button></div></div>`;
   }
 
   private pauseHtml(): string {
