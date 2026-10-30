@@ -111,7 +111,9 @@ export function explain(outcome: RideOutcome, stage: StageSpec, params?: Array<{
     case 'collide': {
       const who = WHO[stage.rival?.who ?? 'rival'];
       return mk('בום!', `התנגשתם ב${who}`, [['נקודת החיתוך', ltr(`(${num(h.x, 2)}, ${num(h.trackY, 2)})`), 'bad']],
-        `לישרים שיפועים שונים, ולכן למערכת יש פתרון יחיד — הם נחתכים ב־${ltr(`x = ${num(h.x, 2)}`)}. רצינו שלא תיפגשו: צריך ישר מקביל (אותו שיפוע, b שונה).`);
+        stage.rival?.goal === 'same'
+          ? `לישרים שיפועים שונים, ולכן הם נחתכים בנקודה אחת בלבד — ב־${ltr(`x = ${num(h.x, 2)}`)}. כדי לרכוב צמוד ל${who} כל הדרך צריך בדיוק את אותו ישר: אותו שיפוע ואותו ${ltr('b')}.`
+          : `לישרים שיפועים שונים, ולכן למערכת יש פתרון יחיד — הם נחתכים ב־${ltr(`x = ${num(h.x, 2)}`)}. רצינו שלא תיפגשו: צריך ישר מקביל (אותו שיפוע, ${ltr('b')} שונה).`);
     }
     case 'never-met': {
       const who = WHO[stage.rival?.who ?? 'rival'];

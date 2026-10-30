@@ -43,3 +43,15 @@ test('stars: 3 for a first unaided build, minus one for a hint, minus for many b
   assert.equal(starsFor(2, false), 2);
   assert.equal(starsFor(5, true), 1);
 });
+
+test('crossing a ghost you must ride with asks for the same line, not a parallel one', () => {
+  const lv = LEVELS.find((l) => l.stages.some((st) => st.rival?.goal === 'same'))!;
+  const st = lv.stages.find((x) => x.rival?.goal === 'same')!;
+  const rv = st.rival!;
+  const seg = st.segments[0];
+  const o = simulateRide(st, [{ m: seg.m.fixed ?? rv.m + 0.25, b: seg.b.fixed ?? rv.b }]);
+  assert.equal(!o.ok && o.reason === 'hazard' && o.hazard.kind, 'collide');
+  const e = explain(o, st);
+  assert.match(e.text, /אותו ישר/);
+  assert.doesNotMatch(e.text, /מקביל/);
+});
