@@ -23,6 +23,27 @@
   - Level select rebuilt as a 3D trail map.
 - **Independent playtest:** about 35 headless runs; findings are in `docs/playtest/PLAYTEST_NOTES.md`. The P0 joint leak (live interval readout and fog stubs) and every P1 were fixed. Remaining limits are listed in `PLAYTEST.md`.
 
+## 2026-10-31: AAA polish pass (user: "treat it like a AAA steam game")
+
+- **Look:**
+  - Ice-cliff grid board.
+  - Noise terrain, Hermon massif and clouds.
+  - Bloom and a color grade, with automatic fallback to plain rendering when frames are slow.
+  - Groomed track with berms and rails.
+  - Static props simplified, so per-frame triangles roughly halved.
+- **Fun:**
+  - A finish kicker hop with a trick on every successful run.
+  - A style score with a personal best per level.
+  - Procedural music that gets busier while riding.
+- **Learning and progression:**
+  - Illustrated lesson cards for each new concept (11 cards). The examples avoid level answers.
+  - Difficulty tags on every level and a legend on the map.
+  - A world-cleared banner that names the next world's subject.
+  - A per-world **expert** tier: generated, solver-checked, no hints, harder setups.
+  - **Practice** runs on the world signs.
+- **Failure replay:** frames the whole grid beside the card. For joint gaps it draws both lines to their true crossing.
+- **QA:** every level ridden with its verified answer *and* a deliberate wrong answer, through key presses on the production build. All right answers succeed. Wrong answers fail with matching explanations; the exceptions are window levels, where a +1-step change can stay inside the window (by design).
+
 ## Verification environment notes
 
 - The in-app browser pane isn't visible while this session has no window, so `requestAnimationFrame` doesn't run and pane screenshots are stale. All gameplay captures come from headless Chromium via Playwright (`scripts/drive.mjs`, `scripts/play-all.mjs`), using real clicks and keys plus `advanceTime`.
