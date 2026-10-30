@@ -144,6 +144,9 @@ export class Game {
 
   loadLevel(id: number | LevelSpec, toBuild = true): void {
     this.level = typeof id === 'number' ? levelById(id) : id;
+    this.sim = null;
+    this.outcome = null;
+    this.explanation = null;
     this.stageIdx = 0;
     this.builds = 0;
     this.hintUsed = false;
@@ -412,7 +415,7 @@ export class Game {
   private onRideEnd(o: RideOutcome): void {
     this.outcome = o;
     this.sound.wind(0);
-    this.explanation = explain(o, this.stage);
+    this.explanation = explain(o, this.stage, this.params);
     this.log.add({
       t: Date.now(),
       level: this.level.id,
@@ -512,7 +515,7 @@ export class Game {
   restartLevel(): void {
     this.log.add({ t: Date.now(), level: this.level.id, stage: this.stage.id, action: 'restart', hintUsed: this.hintUsed, build: this.builds, firstUnaided: false });
     this.paused = false;
-    this.loadLevel(this.level.id);
+    this.loadLevel(this.generated ? this.level : this.level.id);
   }
 
   // ---------------- per-frame ----------------
@@ -548,7 +551,9 @@ export class Game {
       this.camLook.copy(target.look);
       if (k >= 1) this.setMode('ride');
     } else if (this.mode === 'ride') {
-      this.updateRide(dt);
+      const st = this.sim?.state;
+      const crawl = st && st.phase === 'ride' && st.v < 1.6 && Math.tan(st.angle) > -0.06;
+      this.updateRide(crawl ? dt * 5 : dt);
       const t = this.chasePose();
       const lag = Math.min(1, dtReal * 9);
       this.camPos.lerp(t.pos, lag);
@@ -714,7 +719,7 @@ export class Game {
     const st = [0, 1, 2].map((i) => `<span class="star ${i < stars ? 'on' : ''}">★</span>`).join('');
     const hint = this.level.noHints || !this.stage.hint ? '' : `<button class="hint-btn" data-a="hint" aria-label="רמז (עולה כוכב)" title="רמז (עולה כוכב)" ${this.mode !== 'build' ? 'disabled' : ''}>💡</button>`;
     return `<div class="tl"><button class="round" data-a="pause" aria-label="השהיה">${ICON.pause}</button><button class="round" data-a="mute" aria-label="השתקה">${this.sound.muted ? ICON.mute : ICON.sound}</button></div>
-      <div class="tr"><div class="pill">${ICON.mtn}<div class="lvname"><b>שלב ${this.level.id}</b> : ${this.level.title}</div><div class="stars">${st}</div></div>${hint}</div>`;
+      <div class="tr"><div class="pill">${ICON.mtn}<div class="lvname"><b>${this.generated ? '❄' : `שלב ${this.level.id}`}</b> : ${this.level.title}</div><div class="stars">${st}</div></div>${hint}</div>`;
   }
 
   renderHud(): void {
@@ -794,7 +799,7 @@ export class Game {
         <div class="knob" data-knob="${i}"><i data-el="knob${i}"></i></div>
         <button class="step" data-a="m-" data-i="${i}" aria-label="הקטנת שיפוע">−</button><div class="val" data-el="mv${i}"></div><button class="step" data-a="m+" data-i="${i}" aria-label="הגדלת שיפוע">+</button></div>
         <div class="row"><div class="riserun" data-el="rr${i}"></div></div>
-        <input class="slider" type="range" min="${s.m.min ?? -3}" max="${s.m.max ?? 3}" step="${s.m.step ?? 0.05}" data-slider="m" data-i="${i}" aria-label="שיפוע">` : ''}
+        <input class="slider" dir="ltr" type="range" min="${s.m.min ?? -3}" max="${s.m.max ?? 3}" step="${s.m.step ?? 0.05}" data-slider="m" data-i="${i}" aria-label="שיפוע">` : ''}
       ${bEd ? `<div class="row"><div class="lab">האיבר החופשי ${ltr('b')}</div><button class="step" data-a="b-" data-i="${i}" aria-label="הקטנת b">−</button><div class="val" data-el="bv${i}"></div><button class="step" data-a="b+" data-i="${i}" aria-label="הגדלת b">+</button></div>` : ''}
       <div class="range" data-el="rng${i}">${xa !== null ? '' : ''}</div></div>`;
   }
@@ -818,9 +823,9 @@ export class Game {
       if (knob) knob.style.transform = `rotate(${(p.m / 3) * 135}deg)`;
       const rng = this.els[`rng${i}`];
       if (rng) {
-        const tr = this.track;
-        const pc = tr.pieces[i];
-        rng.innerHTML = `${ltr(`x ∈ [${num(pc.xa, 2)}, ${num(pc.xb, 2)}]`)}${!s.given && !this.level.fullPreview ? ` · ערפל: רואים רק ${ltr('15%')}` : ''}`;
+        // Nominal stretch only: the live joint position would give away the system's solution.
+        const joined = st.segments.length > 1;
+        rng.innerHTML = `${ltr(`x ∈ [${num(s.x0, 2)}, ${num(s.x1, 2)}]`)}${joined ? ' · הקצוות: בנקודות החיתוך' : ''}${!s.given && !this.level.fullPreview ? ` · ערפל: רואים רק ${ltr('15%')}` : ''}`;
       }
       const card = this.els[`card${i}`];
       card?.classList.toggle('sel', i === this.selected && !s.given);
@@ -887,7 +892,7 @@ export class Game {
       const last = this.stageIdx === this.level.stages.length - 1;
       const stars = last ? [0, 1, 2].map((i) => `<span class="star ${i < this.lastStars ? 'on' : ''}">★</span>`).join('') : '';
       const nextLabel = this.generated ? 'ריצה חדשה' : last ? (LEVELS.some((l) => l.id === this.level.id + 1) ? 'לשלב הבא' : 'למפה') : 'למרוץ הבא';
-      return `<div class="result win"><h1>${last ? 'יש!' : 'הצלחה!'}</h1><h2>${last ? 'הגעתם לבקתה' : `מקטע ${this.stageIdx + 1} מתוך ${this.level.stages.length}`}</h2>
+      return `<div class="result win"><h1>${last ? 'יש!' : 'הצלחה!'}</h1><h2>${last ? 'הגעתם לבקתה' : `מרוץ ${this.stageIdx + 1} מתוך ${this.level.stages.length}`}</h2>
         ${last ? `<div class="bigstars">${stars}</div>` : ''}
         <div class="box"><div class="txt">המסלול שלכם:${this.params.map((p, i) => `<div class="eqrow"><span class="seg-tag" style="--c:${SEG_CSS[i % 4]}">${i + 1}</span> ${ltr(equation(p.m, p.b))}</div>`).join('')}
         <div class="meta" style="color:#4b5b80">ניסיונות: ${ltr(String(this.builds))}${this.hintUsed ? ' · השתמשתם ברמז' : ''} · ❄ ${ltr(String(this.flakes))}${this.tricks ? ` · טריקים: ${ltr(String(this.tricks))}` : ''}</div></div></div>

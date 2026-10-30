@@ -176,7 +176,7 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
   :root { --panel-w: auto; }
   .panel { top: auto; left: 8px; right: 8px; bottom: 8px; max-height: 42%; width: auto; padding: 8px; }
   .panel h2 { display: none; }
-  .go { width: 78px; height: 78px; font-size: 26px; bottom: calc(42% + 16px); left: 10px; border-width: 4px; }
+  .go { width: 72px; height: 72px; font-size: 24px; bottom: calc(42% + 16px); left: auto; right: 10px; border-width: 4px; }
   .go small { display: none; }
   .tr { left: 120px; justify-content: flex-start; }
   .pill { padding: 6px 10px; gap: 6px; min-width: 0; flex: 1; }
@@ -188,10 +188,14 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
   .round, .hint-btn { width: 44px; height: 44px; }
   .choices { bottom: 8px; left: 8px; right: 8px; transform: none; }
   .choice { min-width: 80px; height: 64px; font-size: 26px; }
-  .rb { width: 74px; height: 74px; font-size: 12px; }
-  .rb span { font-size: 22px; }
-  .speedo { width: 120px; height: 120px; }
-  .speedo .num { font-size: 32px; }
+  .rb { width: 66px; height: 66px; font-size: 11px; border-width: 3px; }
+  .rb span { font-size: 20px; }
+  .ride-btns { gap: 8px; right: 10px; bottom: 14px; }
+  .speedo { width: 104px; height: 104px; left: 8px; bottom: 96px; }
+  .speedo .num { font-size: 28px; }
+  .speedo .unit { bottom: 20px; font-size: 11px; }
+  .altg { top: 70px; transform: translateX(-50%) scale(0.78); transform-origin: top center; }
+  .flakes { top: 70px; }
   .select .worlds { grid-template-columns: 1fr 1fr; overflow-y: auto; inset: 64px 8px 84px; }
   .table-card, .shape-card { top: 120px; bottom: auto; left: 8px; transform: scale(0.8); transform-origin: top left; }
   .result { top: auto; bottom: 8px; right: 8px; }

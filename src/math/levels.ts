@@ -397,10 +397,10 @@ export const LEVELS: LevelSpec[] = [
       {
         id: '17',
         segments: [
-          { id: 'a', name: 'יורדת', x0: 0, x1: 12, m: mDial(-2, 1, 0), b: { fixed: 20 } },
-          { id: 'b', name: 'קבועה', x0: 12, x1: 20, m: mDial(-2, 1, -0.5), b: bDial(-10, 30, 10) },
-          { id: 'c', name: 'עולה', x0: 20, x1: 28, m: mDial(-2, 1, 0), b: bDial(-10, 30, 10) },
-          { id: 'd', name: 'יורדת', x0: 28, x1: 40, m: mDial(-2, 1, 0), b: bDial(-10, 50, 10) },
+          { id: 'a', name: 'קטע א׳', x0: 0, x1: 12, m: mDial(-2, 1, 0), b: { fixed: 20 } },
+          { id: 'b', name: 'קטע ב׳', x0: 12, x1: 20, m: mDial(-2, 1, -0.5), b: bDial(-10, 30, 10) },
+          { id: 'c', name: 'קטע ג׳', x0: 20, x1: 28, m: mDial(-2, 1, 0), b: bDial(-10, 30, 10) },
+          { id: 'd', name: 'קטע ד׳', x0: 28, x1: 40, m: mDial(-2, 1, 0), b: bDial(-10, 50, 10) },
         ],
         joints: [{ zone: [11.5, 12.5] }, { zone: [19.5, 20.5] }, { zone: [27.5, 28.5] }],
         objects: [

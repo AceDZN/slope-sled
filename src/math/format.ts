@@ -36,5 +36,5 @@ export function riseRun(m: number): { rise: number; run: number } {
 }
 
 export function ltr(text: string): string {
-  return `<bdi dir="ltr" class="math">${text}</bdi>`;
+  return `<bdi dir="ltr" class="math">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</bdi>`;
 }

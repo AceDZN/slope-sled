@@ -127,7 +127,7 @@ export class Course {
       if (y === y0) continue;
       this.labels.set(`c:gy${y}`, [x0 - 0.3, y, GRID_Z], ltr(num(y)), 'lbl axis-y');
     }
-    this.labels.set('c:ax', [x1 + 1.6, y0 + 1.0, GRID_Z], `${ltr('x →')} <span class="axis-note">גדל משמאל לימין</span>`, 'lbl axis-name');
+    this.labels.set('c:ax', [x1 + 1.2, y0 - 2.6, GRID_Z], `${ltr('x →')} <span class="axis-note">גדל משמאל לימין</span>`, 'lbl axis-name');
     this.labels.set('c:ay', [x0 + 0.9, y1 + 1.6, GRID_Z], `${ltr('y')} <span class="axis-note">גובה (מ׳)</span>`, 'lbl axis-name');
   }
 
@@ -430,6 +430,8 @@ export class Course {
       let xb = p.xb;
       const fog = o.mode === 'build' && !o.fullPreview && !seg.given;
       if (fog) [xa, xb] = fogVisibleRange(st, track, i);
+      // Given segments show their nominal stretch while building, so their ends don't reveal the joint.
+      else if (o.mode === 'build' && seg.given) [xa, xb] = [seg.x0, seg.x1];
       const color = o.badSeg === i ? COLORS.danger : SEG_COLORS[i % SEG_COLORS.length];
       const ghost = o.mode === 'build' && o.fullPreview && !seg.given;
       this.trackGroup.add(this.ribbon(p.line.m, p.line.b, xa, xb, color, ghost ? 0.55 : 1, o.selected === i && o.mode === 'build'));

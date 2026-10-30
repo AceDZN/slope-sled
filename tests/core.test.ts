@@ -45,3 +45,18 @@ test('wipeout explanation reports the worst point, not the touching point', asyn
   assert.equal(h.x, 6); // the track dips below the rocks right after x = 6
   assert.deepEqual(h.worst, { x: 16, trackY: -1, needY: 4 });
 });
+
+test('build view leaks nothing about the joint: fog stubs do not move when the lines change', async () => {
+  const { buildTrack, fogVisibleRange } = await import('../src/math/track.ts');
+  const { LEVELS } = await import('../src/math/levels.ts');
+  for (const lv of LEVELS) {
+    for (const st of lv.stages) {
+      if (st.segments.length < 2) continue;
+      const a = st.segments.map((s) => ({ m: s.m.fixed ?? -0.5, b: s.b.fixed ?? 10 }));
+      const b = st.segments.map((s) => ({ m: s.m.fixed ?? -1.25, b: s.b.fixed ?? 23.5 }));
+      st.segments.forEach((_, i) => {
+        assert.deepEqual(fogVisibleRange(st, buildTrack(st, a), i), fogVisibleRange(st, buildTrack(st, b), i), `level ${lv.id} seg ${i}`);
+      });
+    }
+  }
+});

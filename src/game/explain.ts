@@ -13,13 +13,28 @@ export interface Explanation {
   plain: string;
 }
 
+/** Sloped boundary: staying a fixed distance from it means the same slope (parallel lines). */
+function parallelTip(boundaryM: number, trackM: number | undefined): string {
+  if (Math.abs(boundaryM) < 1e-9 || trackM === undefined || Math.abs(trackM - boundaryM) < 1e-9) return '';
+  return ` לגבול יש שיפוע ${ltr(num(boundaryM))}; ישרים מקבילים — אותו שיפוע — לא מתקרבים זה לזה.`;
+}
+
+/** Gate on the first segment with a fixed start: show Δy and Δx from the start (slope = Δy ÷ Δx, not the other way). */
+function riseRunTip(stage: StageSpec, gx: number, gy: number, seg: number): string {
+  const s = stage.segments[seg];
+  if (seg !== 0 || s.b.fixed === undefined || s.m.fixed !== undefined) return '';
+  if (s.x0 !== 0) return '';
+  const y0 = s.b.fixed; // start height: the line at x = 0
+  return ` מההתחלה לשער: ${ltr(`Δy = ${num(gy - y0)}`)}, ${ltr(`Δx = ${num(gx)}`)}. שיפוע = ${ltr('Δy ÷ Δx')} — השינוי בגובה חלקי השינוי במרחק, לא להפך.`;
+}
+
 const WHO: Record<string, string> = { dog: 'הכלב', friend: 'החבר', ghost: 'מסלול הרוח', rival: 'היריב' };
 
 function strip(html: string): string {
-  return html.replace(/<[^>]+>/g, '');
+  return html.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 }
 
-export function explain(outcome: RideOutcome, stage: StageSpec): Explanation {
+export function explain(outcome: RideOutcome, stage: StageSpec, params?: Array<{ m: number; b: number }>): Explanation {
   const mk = (title: string, subtitle: string, rows: Explanation['rows'], text: string): Explanation => ({
     title,
     subtitle,
@@ -58,7 +73,7 @@ export function explain(outcome: RideOutcome, stage: StageSpec): Explanation {
       const op = c.strict ? '>' : '≥';
       const rhs = equation(c.m, c.b).replace('y = ', '');
       return mk('אופס!', c.look === 'ridge' ? 'פגעתם ברכס הסלעים' : 'נתקעתם בסלע', [['המסלול', you, 'bad'], ['הסלע', need, 'need']],
-        `ב־${x} המסלול שלכם בגובה ${ltr(num(w.trackY, 2))}, והסלעים מגיעים עד ${ltr(num(w.needY, 2))}. המסלול צריך לקיים ${ltr(`y ${op} ${rhs}`)} — לעבור מעל.`);
+        `ב־${x} המסלול שלכם בגובה ${ltr(num(w.trackY, 2))}, והסלעים מגיעים עד ${ltr(num(w.needY, 2))}. המסלול צריך לקיים ${ltr(`y ${op} ${rhs}`)} — לעבור מעל.${parallelTip(c.m, params?.[h.seg]?.m)}`);
     }
     case 'branch': {
       const c = h.constraint!;
@@ -71,12 +86,12 @@ export function explain(outcome: RideOutcome, stage: StageSpec): Explanation {
       const what = { branch: 'נתקעתם בענף', bridge: 'התנגשתם בגשר הקרח', avalanche: 'נכנסתם לאזור המפולת', cornice: 'התנגשתם בכרכוב השלג' }[c.look as string] ?? 'התנגשתם';
       const thing = { branch: 'הענף', bridge: 'הגשר', avalanche: 'גבול המפולת', cornice: 'הכרכוב' }[c.look as string] ?? 'הגבול';
       return mk('אופס!', what, [['המסלול', you, 'bad'], [thing, need, 'need']],
-        `ב־${x} המסלול שלכם בגובה ${ltr(num(w.trackY, 2))}, ו${thing} בגובה ${ltr(num(w.needY, 2))}. המסלול צריך לקיים ${ltr(`y ${op} ${rhs}`)} — לעבור מתחת${c.strict ? ' (לא לגעת)' : ''}.`);
+        `ב־${x} המסלול שלכם בגובה ${ltr(num(w.trackY, 2))}, ו${thing} בגובה ${ltr(num(w.needY, 2))}. המסלול צריך לקיים ${ltr(`y ${op} ${rhs}`)} — לעבור מתחת${c.strict ? ' (לא לגעת)' : ''}.${parallelTip(c.m, params?.[h.seg]?.m)}`);
     }
     case 'gate-high':
     case 'gate-low':
       return mk('אופס!', h.kind === 'gate-high' ? 'עפתם מעל השער' : 'נכנסתם בקיר הקרח', [['המסלול', you, 'bad'], ['השער', need, 'need']],
-        `ב־${x} המסלול שלכם בגובה ${ltr(num(h.trackY, 2))}, אבל הפתח בשער בגובה ${ltr(num(h.needY, 2))}.`);
+        `ב־${x} המסלול שלכם בגובה ${ltr(num(h.trackY, 2))}, אבל הפתח בשער בגובה ${ltr(num(h.needY, 2))}.${riseRunTip(stage, h.x, h.needY, h.seg)}`);
     case 'gap': {
       const j = h.joint!;
       const zone = ltr(`${num(j.zone[0])} ≤ x ≤ ${num(j.zone[1])}`);
@@ -85,7 +100,7 @@ export function explain(outcome: RideOutcome, stage: StageSpec): Explanation {
           `לשני הישרים אותו שיפוע — הם מקבילים, ולכן אין להם נקודת חיתוך בכלל. נשאר חור באזור החיבור ${zone}.`);
       }
       return mk('אופס!', 'נפלתם בחור בין המקטעים', [['נקודת החיתוך', ltr(`x = ${num(j.solutionX ?? h.x, 2)}`), 'bad'], ['אזור החיבור', zone, 'need']],
-        `שני הישרים נחתכים ב־${ltr(`x = ${num(j.solutionX ?? h.x, 2)}`)} — מחוץ לאזור החיבור ${zone}, אז שם אין גשר ביניהם.`);
+        `שני הישרים נחתכים ב־${ltr(`x = ${num(j.solutionX ?? h.x, 2)}`)} — מחוץ לאזור החיבור ${zone}, אז שם אין גשר ביניהם.${stage.shapeGraph ? ' בדקו את סימן השיפוע של כל קטע: ירידה = שיפוע שלילי, מישור = 0, עלייה = חיובי.' : ' נקודת החיתוך היא הפתרון של מערכת שתי המשוואות.'}`);
     }
     case 'finish-high':
       return mk('אופס!', 'עפתם מעל הבקתה', [['המסלול', you, 'bad'], ['הבקתה', need, 'need']],

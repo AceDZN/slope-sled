@@ -81,9 +81,12 @@ export function pieceAt(track: Track, x: number): Piece {
 /** Fog preview: the drawn part of a segment while building (first 15 % of its nominal length). */
 export const FOG_FRACTION = 0.15;
 
-export function fogVisibleRange(stage: StageSpec, track: Track, seg: number): [number, number] {
+/**
+ * The stub starts at the segment's nominal start, never at the computed joint: drawing from the joint
+ * would show where the lines cross and let players dial to the answer instead of solving the system.
+ */
+export function fogVisibleRange(stage: StageSpec, _track: Track, seg: number): [number, number] {
   const s = stage.segments[seg];
-  const p = track.pieces[seg];
   const len = (s.x1 - s.x0) * FOG_FRACTION;
-  return [p.xa, Math.min(p.xb, p.xa + len)];
+  return [s.x0, s.x0 + len];
 }
