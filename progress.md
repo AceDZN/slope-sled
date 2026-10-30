@@ -26,7 +26,7 @@
 ## Verification environment notes
 
 - The in-app browser pane isn't visible while this session has no window, so `requestAnimationFrame` doesn't run and pane screenshots are stale. All gameplay captures come from headless Chromium via Playwright (`scripts/drive.mjs`, `scripts/play-all.mjs`), using real clicks and keys plus `advanceTime`.
-- Headless WebGL here is software-rendered, so FPS was not measured. Bundle: 766 kB JS (203 kB gzip); `dist/` is 6.9 MB including the 5.2 MB of models.
+- Headless WebGL here is software-rendered, so FPS was not measured. Bundle: 776 kB JS (206 kB gzip); `dist/` is 6.9 MB including 5.6 MB of models.
 
 ## Open / next
 
