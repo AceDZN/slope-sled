@@ -319,8 +319,8 @@ export class Course {
     hut.rotation.y = -0.35;
     this.staticGroup.add(hut);
     if (f.y > 0.3) {
-      const plat = new THREE.Mesh(new THREE.BoxGeometry(14, f.y, 12), this.snowMat);
-      plat.position.set(f.x + 6, f.y / 2, -1);
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(12, f.y, 9), this.snowMat);
+      plat.position.set(f.x + 5.5, f.y / 2, -3.2);
       plat.receiveShadow = true;
       this.staticGroup.add(plat);
     }

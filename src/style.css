@@ -63,7 +63,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .hint-text { position: absolute; top: 78px; left: 50%; transform: translateX(-50%); background: #fff27a; color: var(--ink); border-radius: 14px; padding: 8px 16px; font-weight: 700; font-size: 15px; box-shadow: 0 3px 10px rgba(0,0,0,.3); }
 
 /* build panel */
-.panel { position: absolute; top: 132px; right: 14px; bottom: 14px; width: var(--panel-w); background: linear-gradient(180deg, #1b3266ee, #122452ee); border: 2px solid #9fb8ff44; border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.panel { position: absolute; top: 132px; right: 14px; max-height: calc(100% - 146px); width: var(--panel-w); background: linear-gradient(180deg, #1b3266ee, #122452ee); border: 2px solid #9fb8ff44; border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .panel h2 { margin: 2px 0 2px; text-align: center; font-size: 22px; }
 .card { background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px 12px; border: 3px solid transparent; transition: border-color .15s; }
 .card.sel { border-color: var(--c); box-shadow: 0 0 0 3px #ffffff55; }
