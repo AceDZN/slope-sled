@@ -184,3 +184,20 @@ No pines, snowy rocks, pylons, dogs or sleds were among the own assets.
 | "canaan dog" | No cream spitz-type stylized dog | Results were brown cartoon dog, Shih Tzu, labrador, etc. |
 | "kid winter" | No stylized kid in an orange jacket | Realistic soldiers, women, dioramas |
 | "snowy rock" | Dark volcanic rock chunk, low-poly grey rocks | No snow cap |
+
+## Second pass: geometry simplification (31 Oct 2026)
+
+To keep frame cost reasonable on school laptops, the static props were simplified with meshoptimizer through gltf-transform. The previous optimized files are kept in `assets-src/tripo/optimized-v1/`.
+
+```bash
+npx @gltf-transform/cli simplify public/models/<name>.glb out.glb --ratio <r> --error 0.004
+```
+
+| Model | Ratio | Triangles before → after | Bytes before → after |
+|---|---|---|---|
+| pine.glb | 0.2 (error-bound) | 9,818 → 3,484 | 307,868 → 162,072 |
+| rock.glb | 0.2 | 18,778 → 3,749 | 537,200 → 193,172 |
+| pylon.glb | 0.25 | 18,743 → 4,677 | 675,024 → 319,284 |
+| hut.glb | 0.4 | 18,902 → 7,545 | 632,896 → 368,320 |
+
+The rigged characters and the sled are unchanged. Measured with `renderer.info` on level 4 at 1280×800: about 0.8M triangles per rendered frame, down from 1.7M on level 18 before simplification. Silhouettes were checked in the build and ride views.

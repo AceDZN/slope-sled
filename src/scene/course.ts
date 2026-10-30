@@ -378,11 +378,10 @@ export class Course {
     const yb = r.m * r.x1 + r.b;
     const L = Math.hypot(r.x1 - r.x0, yb - ya);
     const color = r.who === 'ghost' ? 0x9fd8ff : 0xc79bff;
-    const mat = std(color, { transparent: true, opacity: r.who === 'ghost' ? 0.45 : 0.9, emissive: color, emissiveIntensity: r.who === 'ghost' ? 0.6 : 0.15 });
-    const rib = new THREE.Mesh(new THREE.BoxGeometry(L, 0.3, 1.8), mat);
+    const mat = std(color, { transparent: true, opacity: r.who === 'ghost' ? 0.35 : 0.5, emissive: color, emissiveIntensity: 0.5, depthWrite: false });
+    const rib = new THREE.Mesh(new THREE.BoxGeometry(L, 0.12, 1.6), mat);
     rib.position.set((r.x0 + r.x1) / 2, (ya + yb) / 2 - 0.15, RIVAL_Z);
     rib.rotation.z = Math.atan2(yb - ya, r.x1 - r.x0);
-    rib.castShadow = true;
     rib.userData.rival = true;
     this.staticGroup.add(rib);
     // The rival's line drawn on the grid (always readable — it is given data).
