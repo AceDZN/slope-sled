@@ -6,6 +6,7 @@ import { Course, SEG_CSS, RIVAL_Z } from '../scene/course.ts';
 import { Assets } from '../scene/assets.ts';
 import { Rider, Dog } from '../scene/characters.ts';
 import { Fx } from '../scene/fx.ts';
+import { TrailMap } from '../scene/map.ts';
 import { Sound } from '../audio.ts';
 import { LEVELS, levelById } from '../math/levels.ts';
 import { generateRun } from '../math/generate.ts';
@@ -53,6 +54,7 @@ export class Game {
   dog!: Dog;
   rivalDog: Dog | null = null;
   rivalSled: Rider | null = null;
+  map!: TrailMap;
   readonly fx = new Fx();
   readonly sound = new Sound();
   progress: Progress = loadProgress();
@@ -116,6 +118,12 @@ export class Game {
     this.rider = new Rider(this.assets);
     this.dog = new Dog(this.assets);
     this.world.scene.add(this.rider.root, this.dog.root);
+    this.map = new TrailMap(this.assets, LEVELS.map((l) => ({ id: l.id, world: l.world })));
+    this.world.scene.add(this.map.group);
+    this.labels.layer.addEventListener('click', (e) => {
+      const t = (e.target as HTMLElement).closest<HTMLElement>('[data-a]');
+      if (t) this.action(t.dataset.a!, t);
+    });
     this.bindInput();
     this.world.resize();
     // A scenic backdrop behind the title screen.
@@ -219,6 +227,7 @@ export class Game {
 
   setMode(m: Mode): void {
     this.mode = m;
+    if (m === 'select') this.refreshMap();
     // Hero scale in the wide build/replay views so the kid and dog read like the mockups; true scale while riding.
     const hero = m === 'build' || m === 'title' || m === 'select' ? 2 : 1;
     this.rider?.root.scale.setScalar(hero);
@@ -512,7 +521,16 @@ export class Game {
     this.modeT += dtReal;
     const dt = dtReal * this.timeScale;
     const cam = this.world.camera;
-    if (this.mode === 'build' || this.mode === 'title' || this.mode === 'select') {
+    if (this.mode === 'select') {
+      const pose = this.map.cameraPose(this.modeT);
+      const k = this.modeT < 0.05 ? 1 : Math.min(1, dtReal * 3);
+      cam.clearViewOffset();
+      cam.fov = 40;
+      cam.position.lerp(pose.pos, k);
+      this.camLook.lerp(pose.look, k);
+      cam.lookAt(this.camLook);
+      cam.updateProjectionMatrix();
+    } else if (this.mode === 'build' || this.mode === 'title') {
       this.course.setGridOpacity(this.mode === 'build' ? 1 : 0);
       this.frameBuild(dtReal, this.mode !== 'build');
     } else if (this.mode === 'swoop') {
@@ -554,8 +572,9 @@ export class Game {
     this.fx.update(dt);
     this.course.update(dtReal);
     this.world.update(dtReal);
-    this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.viewCenter());
+    this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.mode === 'select' ? this.map.cameraPose(0).look : this.viewCenter());
     if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title' || this.mode === 'select';
+    this.labels.only = this.mode === 'select' ? ['map:'] : [];
   }
 
   private updateCrash(dt: number, dtReal: number): void {
@@ -874,10 +893,33 @@ export class Game {
       <div class="btns"><button class="btn primary" data-a="retry">↻ נסו שוב</button>${canHint ? `<button class="btn secondary" data-a="hint">💡 רמז</button>` : ''}</div></div>`;
   }
 
-  private selectHtml(): string {
-    const total = Object.values(this.progress.stars).reduce((a, b) => a + b, 0);
+  private currentLevelId(): number {
     let cur = 1;
     for (const l of LEVELS) if (unlocked(this.progress, l.id)) cur = l.id;
+    return cur;
+  }
+
+  private refreshMap(): void {
+    if (!this.map) return;
+    const cur = this.currentLevelId();
+    this.labels.clear('map:');
+    for (const f of this.map.flags) {
+      const l = levelById(f.id);
+      const un = unlocked(this.progress, f.id);
+      const s = this.progress.stars[f.id] ?? 0;
+      this.map.setState(f.id, !un ? 'locked' : f.id === cur && s === 0 ? 'current' : s > 0 ? 'done' : 'current');
+      const stars = `<span class="fs">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</span>`;
+      this.labels.set(`map:f${f.id}`, f.pos, `<button class="mapflag ${un ? '' : 'locked'} ${f.id === cur ? 'current' : ''}" data-a="level" data-i="${f.id}" ${un ? '' : 'disabled'} title="${l.title}"><b>${un ? f.id : '🔒'}</b>${stars}</button>`, 'lbl map-lbl');
+    }
+    this.map.worldCenters.forEach((c, i) => {
+      const w = i + 1;
+      this.labels.set(`map:w${w}`, c.clone().add(new THREE.Vector3(0, 7, 0)), `<div class="sign"><b>${WORLD_NAMES[w][0]}</b><small>${WORLD_NAMES[w][1]}</small></div>`, 'lbl map-sign');
+    });
+  }
+
+  private selectHtml(): string {
+    const total = Object.values(this.progress.stars).reduce((a, b) => a + b, 0);
+    const cur = this.currentLevelId();
     const worlds = [1, 2, 3, 4]
       .map((w) => {
         const flags = LEVELS.filter((l) => l.world === w)
@@ -894,9 +936,14 @@ export class Game {
         return `<div class="world"><h3>${WORLD_NAMES[w][0]}</h3><div class="sub">${WORLD_NAMES[w][1]}</div><div class="flags">${flags}${fresh}</div></div>`;
       })
       .join('');
-    return `<div class="select"><div class="top"><h1>⛰ החרמון</h1><div class="pill"><div class="lvname">★ ${ltr(String(total))} / ${ltr(String(LEVELS.length * 3))} · ❄ ${ltr(String(this.progress.flakes))}</div></div></div>
-      <div class="worlds">${worlds}</div>
-      <div class="bottom"><div class="info">${ltr('x')} גדל משמאל לימין גם בממשק בעברית · שיפוע שלילי = ירידה</div><button class="btn primary" style="flex:none;min-width:180px" data-a="level" data-i="${cur}">שחקו</button></div></div>`;
+    const freshBtns = [1, 2, 3, 4]
+      .filter((w) => LEVELS.some((l) => l.world === w && l.transfer && (this.progress.stars[l.id] ?? 0) > 0))
+      .map((w) => `<button class="btn secondary fresh-btn" data-a="fresh" data-i="${w}">❄ ריצה חדשה · ${WORLD_NAMES[w][0]}</button>`)
+      .join('');
+    const curL = levelById(cur);
+    return `<div class="select"><div class="top"><h1>⛰ מפת החרמון</h1><div class="pill"><div class="lvname">★ ${ltr(String(total))} / ${ltr(String(LEVELS.length * 3))} · ❄ ${ltr(String(this.progress.flakes))}</div></div></div>
+      <details class="worlds-list"><summary>רשימת שלבים</summary><div class="worlds">${worlds}</div></details>
+      <div class="bottom"><div class="info"><b>השלב הבא: ${curL.id} · ${curL.title}</b><br>${ltr('x')} גדל משמאל לימין גם בממשק בעברית · שיפוע שלילי = ירידה</div><div class="fresh-row">${freshBtns}</div><button class="btn primary" style="flex:none;min-width:180px" data-a="level" data-i="${cur}">שחקו</button></div></div>`;
   }
 
   private pauseHtml(): string {

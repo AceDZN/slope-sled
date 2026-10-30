@@ -49,10 +49,19 @@ export class Labels {
     }
   }
 
+  /** Labels whose id starts with one of these prefixes are shown even when the rest are hidden. */
+  only: string[] = [];
+
   update(camera: THREE.Camera, w: number, h: number): void {
-    this.layer.style.display = this.hidden ? 'none' : '';
-    if (this.hidden) return;
-    for (const l of this.items.values()) {
+    const anyOnly = this.only.length > 0;
+    this.layer.style.display = this.hidden && !anyOnly ? 'none' : '';
+    if (this.hidden && !anyOnly) return;
+    for (const [id, l] of this.items) {
+      const allowed = anyOnly ? this.only.some((p) => id.startsWith(p)) : !id.startsWith('map:');
+      if (!allowed || (this.hidden && !anyOnly)) {
+        l.el.style.display = 'none';
+        continue;
+      }
       this.v.copy(l.pos).project(camera);
       const on = l.visible && this.v.z < 1 && Math.abs(this.v.x) < 1.2 && Math.abs(this.v.y) < 1.2;
       l.el.style.display = on ? '' : 'none';

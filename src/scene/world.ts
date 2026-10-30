@@ -29,6 +29,7 @@ export class World {
   readonly lantern: THREE.PointLight;
   private skyMat: THREE.ShaderMaterial;
   private snowfall: THREE.Points;
+  private sky!: THREE.Mesh;
   private snowVel: Float32Array;
   readonly backdrop = new THREE.Group();
   reducedMotion = false;
@@ -44,7 +45,7 @@ export class World {
     this.renderer.domElement.className = 'game-canvas';
     container.appendChild(this.renderer.domElement);
 
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 900);
+    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1200);
     this.scene.fog = new THREE.Fog(COLORS.horizon, 160, 620);
 
     // Sky dome with a vertical gradient and a sun glow.
@@ -65,6 +66,7 @@ export class World {
     });
     const sky = new THREE.Mesh(new THREE.SphereGeometry(850, 32, 16), this.skyMat);
     sky.frustumCulled = false;
+    this.sky = sky;
     this.scene.add(sky);
 
     this.hemi = new THREE.HemisphereLight(0xdbeaff, 0x8aa6d8, 1.25);
@@ -205,6 +207,7 @@ export class World {
   }
 
   render(): void {
+    this.sky.position.copy(this.camera.position);
     this.renderer.render(this.scene, this.camera);
   }
 }

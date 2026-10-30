@@ -206,3 +206,24 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
 .chip.on { border-color: var(--orange); background: linear-gradient(180deg, #fff6ea, #ffd9b0); }
 .eqrow { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 18px; font-weight: 700; }
 .eqrow .seg-tag { width: 24px; height: 24px; font-size: 13px; }
+
+/* 3D trail map */
+.label-layer .map-lbl, .label-layer .map-sign { pointer-events: auto; }
+.mapflag { display: flex; flex-direction: column; align-items: center; gap: 1px; background: #fff7ea; color: var(--ink); border-radius: 12px; padding: 3px 8px 2px; box-shadow: 0 3px 0 #c79a62, 0 4px 10px #0004; border: 2px solid #3ee08f; font-family: inherit; }
+.mapflag b { font-size: 17px; }
+.mapflag .fs { font-size: 11px; color: var(--gold); -webkit-text-stroke: .4px #8a5a00; letter-spacing: -1px; }
+.mapflag.current { border-color: var(--ice); box-shadow: 0 0 0 3px #fff, 0 0 16px var(--ice); }
+.mapflag.locked { border-color: #8a94a6; opacity: 0.75; }
+.map-sign { pointer-events: none !important; }
+.sign { background: linear-gradient(180deg, #8a5a33, #6a4224); border: 2px solid #f0c48a; color: #fff3dc; border-radius: 10px; padding: 4px 12px; text-align: center; box-shadow: 0 4px 10px #0005; }
+.sign b { display: block; font-size: 17px; }
+.sign small { font-size: 11px; color: #ffe2bb; }
+.worlds-list { position: absolute; top: 70px; left: 14px; max-width: min(900px, calc(100% - 28px)); }
+.worlds-list summary { cursor: pointer; background: var(--navy-glass); padding: 8px 14px; border-radius: 12px; display: inline-block; font-weight: 700; }
+.worlds-list .worlds { position: static; margin-top: 8px; max-height: 70vh; overflow-y: auto; }
+.fresh-row { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; justify-content: center; }
+.fresh-btn { flex: none; font-size: 15px; padding: 10px 12px; }
+.select { pointer-events: none; }
+.select > * { pointer-events: auto; }
+.select .top { pointer-events: none; }
+.select .top > * { pointer-events: auto; }
