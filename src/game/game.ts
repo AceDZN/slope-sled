@@ -77,6 +77,8 @@ export class Game {
   outcome: RideOutcome | null = null;
   explanation: Explanation | null = null;
   lastStars = 0;
+  /** Set when this result just cleared a world's transfer level for the first time. */
+  worldCleared: number | null = null;
   private modeT = 0;
   private swoopFrom = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   private camLook = new THREE.Vector3();
@@ -583,6 +585,7 @@ export class Game {
       this.lastStars = stars;
       if (!this.generated) {
         const prev = this.progress.stars[this.level.id] ?? 0;
+        this.worldCleared = this.level.transfer && prev === 0 ? this.level.world : null;
         this.progress.stars[this.level.id] = Math.max(prev, stars);
       } else {
         const k = `${this.level.id >= 200 ? 'expert' : 'fresh'}-${this.level.world}`;
@@ -595,6 +598,7 @@ export class Game {
   }
 
   backToBuild(): void {
+    this.worldCleared = null;
     this.sim = null;
     this.course.clearMarker();
     this.rider.body.rotation.set(0, 0, 0);
@@ -606,6 +610,7 @@ export class Game {
   }
 
   next(): void {
+    this.worldCleared = null;
     if (this.stageIdx < this.level.stages.length - 1) {
       this.stageIdx++;
       this.sim = null;
@@ -1035,6 +1040,7 @@ export class Game {
       const nextLabel = this.generated ? 'ריצה חדשה' : last ? (LEVELS.some((l) => l.id === this.level.id + 1) ? 'לשלב הבא' : 'למפה') : 'למרוץ הבא';
       return `<div class="result win"><h1>${last ? 'יש!' : 'הצלחה!'}</h1><h2>${last ? 'הגעתם לבקתה' : `מרוץ ${this.stageIdx + 1} מתוך ${this.level.stages.length}`}</h2>
         ${last ? `<div class="bigstars">${stars}</div>` : ''}
+        ${this.worldCleared ? `<div class="cleared">🎉 סיימתם את <b>${WORLD_NAMES[this.worldCleared][0]}</b>!<br>נפתחו במפה: ❄ תרגול ו־🏔 מומחה.${this.worldCleared < 4 ? `<br>העולם הבא: <b>${WORLD_NAMES[this.worldCleared + 1][0]}</b> — ${WORLD_NAMES[this.worldCleared + 1][1]}` : '<br>נשארה רק הירידה הגדולה מהפסגה!'}</div>` : ''}
         <div class="box"><div class="txt">המסלול שלכם:${this.params.map((p, i) => `<div class="eqrow"><span class="seg-tag" style="--c:${SEG_CSS[i % 4]}">${i + 1}</span> ${ltr(equation(p.m, p.b))}</div>`).join('')}
         <div class="meta" style="color:#4b5b80">ניסיונות: ${ltr(String(this.builds))}${this.hintUsed ? ' · השתמשתם ברמז' : ''} · ❄ ${ltr(String(this.flakes))}${this.tricks ? ` · טריקים: ${ltr(String(this.tricks))}` : ''}</div></div></div>
         ${this.lastStyle ? `<div class="style"><div class="style-total">ניקוד סגנון <b>${ltr(String(this.lastStyle.total))}</b>${this.lastStyle.isBest ? ' <span class="newbest">שיא חדש!</span>' : ` <small>שיא: ${ltr(String(this.lastStyle.best))}</small>`}</div>

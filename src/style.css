@@ -274,3 +274,5 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
 .mapflag.d-final { border-bottom-color: #ff5a4e; }
 .legend { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; margin-top: 6px; }
 .cross-pt { border-color: #ff5a4e; }
+.cleared { margin: 8px 0 4px; background: linear-gradient(90deg, #1f6b4a, #1d5a7a); border: 1.5px solid #3ee08f; border-radius: 14px; padding: 8px 10px; font-size: 15px; line-height: 1.5; color: #fff; animation: clearedIn .5s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes clearedIn { from { transform: scale(.9); } to { transform: none; } }
