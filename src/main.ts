@@ -60,11 +60,11 @@ canvas.addEventListener('webglcontextrestored', () => location.reload());
 game
   .init((f) => (msg.textContent = `טוען את ההר… ${Math.round(f * 100)}%`))
   .then(() => {
+    postToHost({ type: 'ready' });
     // Workbook lesson links open a level directly (?level=N), even one still locked in this save.
     const lv = parseLevelParam(location.search, LEVELS.length);
     if (lv !== null) game.loadLevel(LEVELS[lv].id);
     boot.remove();
-    postToHost({ type: 'ready' });
     requestAnimationFrame(frame);
   })
   .catch((err) => {
