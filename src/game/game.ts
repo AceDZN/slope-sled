@@ -18,6 +18,7 @@ import type { LevelSpec, ParamSpec, StageParams, StageSpec } from '../math/types
 import { explain, CHEERS, type Explanation } from './explain.ts';
 import { LESSONS, LEVEL_LESSON, LEVEL_DIFFICULTY, DIFFICULTY_LABEL, type Difficulty } from './lessons.ts';
 import { loadProgress, saveProgress, starsFor, unlocked, LearningLog, type Progress } from './progress.ts';
+import { postToHost } from '../host.ts';
 
 type Mode = 'title' | 'select' | 'build' | 'swoop' | 'ride' | 'crash' | 'result';
 
@@ -85,6 +86,7 @@ export class Game {
   private camPos = new THREE.Vector3();
   private shake = 0;
   private kidLanded = false;
+  private levelStartT = 0;
   /** Last failed attempt of this stage, shown faintly while rebuilding. */
   private lastTry: { track: Track; clipX?: number; failX: number; failY: number } | null = null;
   private timeScale = 1;
@@ -199,6 +201,10 @@ export class Game {
     this.builds = 0;
     this.hintUsed = false;
     this.loadStage();
+    if (toBuild && !this.generated) {
+      this.levelStartT = performance.now();
+      postToHost({ type: 'level-start', level: this.level.id });
+    }
     const ls = LEVEL_LESSON[this.level.id];
     this.lesson = toBuild && !this.generated && ls && !this.progress.seenLessons.includes(ls) ? ls : null;
     if (toBuild) this.setMode('build');
@@ -617,6 +623,7 @@ export class Game {
       const stars = starsFor(this.builds, this.hintUsed);
       this.lastStars = stars;
       if (!this.generated) {
+        postToHost({ type: 'level-complete', level: this.level.id, stars, score: this.lastStyle?.total, durationMs: Math.round(performance.now() - this.levelStartT) });
         const prev = this.progress.stars[this.level.id] ?? 0;
         this.worldCleared = this.level.transfer && prev === 0 ? this.level.world : null;
         this.progress.stars[this.level.id] = Math.max(prev, stars);

@@ -3,6 +3,8 @@ import '@fontsource/rubik/500.css';
 import '@fontsource/rubik/700.css';
 import './style.css';
 import { Game } from './game/game.ts';
+import { initHost, parseLevelParam, postToHost } from './host.ts';
+import { LEVELS } from './math/levels.ts';
 
 declare global {
   interface Window {
@@ -15,6 +17,7 @@ declare global {
 const root = document.getElementById('game')!;
 const boot = document.getElementById('boot')!;
 const msg = document.getElementById('boot-msg')!;
+initHost('slope-sled');
 const game = new Game(root);
 window.__game = game;
 
@@ -57,7 +60,11 @@ canvas.addEventListener('webglcontextrestored', () => location.reload());
 game
   .init((f) => (msg.textContent = `טוען את ההר… ${Math.round(f * 100)}%`))
   .then(() => {
+    // Workbook lesson links open a level directly (?level=N), even one still locked in this save.
+    const lv = parseLevelParam(location.search, LEVELS.length);
+    if (lv !== null) game.loadLevel(LEVELS[lv].id);
     boot.remove();
+    postToHost({ type: 'ready' });
     requestAnimationFrame(frame);
   })
   .catch((err) => {
