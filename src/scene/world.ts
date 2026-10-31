@@ -248,25 +248,26 @@ export class World {
       u.top.value.set(0x040820); u.mid.value.set(0x0c1a46); u.bottom.value.set(0x2a3b70); u.sunColor.value.set(0xc8d8ff);
       u.sunDir.value.set(-0.4, 0.5, 0.3).normalize();
       u.stars.value = 1;
-      this.hemi.intensity = 0.45; this.hemi.color.set(0x8aa0ff);
+      this.hemi.intensity = 0.45; this.hemi.color.set(0x8aa0ff); this.hemi.groundColor.set(0x3a4a80);
       this.sun.intensity = 0.7; this.sun.color.set(0xa9c0ff);
       this.lantern.intensity = 60;
       (this.scene.fog as THREE.Fog).color.set(0x1a2550);
       this.renderer.toneMappingExposure = 1.15;
       if (this.grade) this.grade.uniforms.warmth.value = -0.02;
     } else if (mood === 'dusk') {
-      u.top.value.set(0x2a2f7a); u.mid.value.set(0x9a5aa8); u.bottom.value.set(0xffb07a); u.sunColor.value.set(0xffb070);
-      u.sunDir.value.set(0.7, 0.15, 0.3).normalize();
-      this.hemi.intensity = 0.85; this.hemi.color.set(0xffc9b0);
-      this.sun.intensity = 2.0; this.sun.color.set(0xffa864);
+      // Alpenglow: violet-blue sky and cold blue snow, with only the sunlit faces warm pink.
+      u.top.value.set(0x1d2466); u.mid.value.set(0x6a5aa8); u.bottom.value.set(0xffa38a); u.sunColor.value.set(0xff9a7a);
+      u.sunDir.value.set(0.7, 0.14, 0.3).normalize();
+      this.hemi.intensity = 1.05; this.hemi.color.set(0xb4c2ff); this.hemi.groundColor.set(0x5a6aa8);
+      this.sun.intensity = 1.7; this.sun.color.set(0xffa48a);
       this.lantern.intensity = 25;
-      (this.scene.fog as THREE.Fog).color.set(0xd59a9a);
-      this.renderer.toneMappingExposure = 1.0;
-      if (this.grade) this.grade.uniforms.warmth.value = 0.08;
+      (this.scene.fog as THREE.Fog).color.set(0x8a86c0);
+      this.renderer.toneMappingExposure = 1.05;
+      if (this.grade) this.grade.uniforms.warmth.value = 0.03;
     } else {
       u.top.value.set(COLORS.skyTop); u.mid.value.set(COLORS.sky); u.bottom.value.set(COLORS.horizon); u.sunColor.value.set(0xfff3d6);
       u.sunDir.value.set(0.5, 0.6, 0.4).normalize();
-      this.hemi.intensity = 1.8; this.hemi.color.set(0xe4f0ff);
+      this.hemi.intensity = 1.8; this.hemi.color.set(0xe4f0ff); this.hemi.groundColor.set(0x8aa6d8);
       this.sun.intensity = 3.3; this.sun.color.set(0xfff1dc);
       this.lantern.intensity = 0;
       (this.scene.fog as THREE.Fog).color.set(COLORS.horizon);

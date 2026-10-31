@@ -280,7 +280,10 @@ export class Game {
     const hero = m === 'build' || m === 'title' || m === 'select' ? 2 : 1;
     this.rider?.root.scale.setScalar(hero);
     this.dog?.root.scale.setScalar(hero);
-    if (this.course) this.course.rideScenery.visible = m === 'ride' || m === 'swoop' || (m === 'crash' && !!this.outcome?.ok);
+    if (this.course) {
+      this.course.rideScenery.visible = m === 'ride' || m === 'swoop' || (m === 'crash' && !!this.outcome?.ok);
+      this.course.setRideFade(m === 'ride' || m === 'swoop');
+    }
     this.modeT = 0;
     this.renderHud();
   }

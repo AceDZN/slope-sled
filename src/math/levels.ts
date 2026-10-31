@@ -61,7 +61,7 @@ export const LEVELS: LevelSpec[] = [
     world: 1,
     title: 'גלישה וטיפוס',
     goal: 'צברו מהירות, החליקו על האגם וזנקו מהרמפה.',
-    view: { x0: 0, x1: 58, y0: -6, y1: 24 },
+    view: { x0: 0, x1: 58, y0: 0, y1: 24 },
     modules: W1,
     stages: [
       {

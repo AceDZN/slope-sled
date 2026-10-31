@@ -8,7 +8,7 @@ import { equation, num, point, ltr } from '../math/format.ts';
 import type { Labels } from './labels.ts';
 import { COLORS } from './world.ts';
 import type { Assets } from './assets.ts';
-import { cliffFace, corduroy, hash2 } from './textures.ts';
+import { cliffFace, corduroy, hash2, cloudPuff } from './textures.ts';
 
 export const SEG_COLORS = [0xff7a1a, 0x35d0ff, 0xb56cff, 0x3ee08f];
 export const SEG_CSS = ['#ff7a1a', '#35d0ff', '#b56cff', '#3ee08f'];
@@ -329,6 +329,7 @@ export class Course {
       slab.position.set((c.x0 + c.x1) / 2, (yA + yB) / 2 + 0.55, 0);
       slab.rotation.z = Math.atan2(yB - yA, c.x1 - c.x0);
       slab.castShadow = true;
+      slab.userData.fadeInRide = true;
       this.staticGroup.add(slab);
       if (c.look === 'bridge') {
         for (const x of [c.x0, c.x1]) {
@@ -359,15 +360,23 @@ export class Course {
     hut.rotation.y = -0.35;
     this.staticGroup.add(hut);
     if (f.y > 0.3) {
-      const plat = new THREE.Mesh(new THREE.BoxGeometry(14, f.y, 10), this.snowMat);
-      plat.position.set(f.x + 6, f.y / 2, -3.5);
+      // Landing ledge for the finish hop: ride view only, so it never covers grid cells while building.
+      const ledgeW = 16;
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(ledgeW, f.y, 8), this.bankMat);
+      plat.position.set(f.x + 0.4 + ledgeW / 2, f.y / 2, 0.4);
       plat.receiveShadow = true;
-      this.staticGroup.add(plat);
+      this.rideScenery.add(plat);
+      // The hut's own snowy pillar, beside the cliff board.
+      const hx = Math.max(f.x + 7.5, this.level.view.x1 + 7.5);
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 5.4, f.y, 9), this.bankMat);
+      pillar.position.set(hx, f.y / 2, -2.2);
+      pillar.receiveShadow = pillar.castShadow = true;
+      this.staticGroup.add(pillar);
     }
     const pile = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), this.snowMat);
     pile.scale.set(1.6, 0.22, 1.1);
     pile.position.set(f.x + 3.8, f.y, 0.3);
-    this.staticGroup.add(pile);
+    this.rideScenery.add(pile);
     const lab = f.label ?? 'full';
     if (lab === 'full') {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.08, 8, 32), new THREE.MeshBasicMaterial({ color: COLORS.gold }));
@@ -606,16 +615,18 @@ export class Course {
   }
 
   private mist(m: number, b: number, x: number, color: number): THREE.Group {
+    // Soft drifting fog where the preview ends: billboards with a cloud texture, level at the stub's end.
     const g = new THREE.Group();
     const y = m * x + b;
-    for (let i = 0; i < 5; i++) {
-      const puff = new THREE.Mesh(
-        new THREE.SphereGeometry(1.1 + i * 0.25, 10, 8),
-        new THREE.MeshBasicMaterial({ color: i === 0 ? color : 0xeaf3ff, transparent: true, opacity: 0.32 - i * 0.04, depthWrite: false }),
-      );
-      puff.position.set(x + 0.6 + i * 1.2, y + Math.sin(i * 1.9) * 0.4, (i % 2) * 0.6 - 0.3);
-      puff.userData.mist = i;
-      g.add(puff);
+    const tex = cloudPuff();
+    for (let i = 0; i < 6; i++) {
+      const mat = new THREE.SpriteMaterial({ map: tex, color: i === 0 ? color : 0xf2f8ff, transparent: true, opacity: i === 0 ? 0.55 : 0.8 - i * 0.08, depthWrite: false });
+      const sp = new THREE.Sprite(mat);
+      const w = 4.2 + i * 0.9;
+      sp.scale.set(w, w * 0.55, 1);
+      sp.position.set(x + 1.2 + i * 1.5, y + Math.sin(i * 1.9) * 0.5 + 0.3, 0.6 + (i % 2) * 0.4);
+      sp.userData.mist = i;
+      g.add(sp);
     }
     return g;
   }
@@ -741,7 +752,7 @@ export class Course {
     vg.setAttribute('position', new THREE.Float32BufferAttribute([x, y0, GRID_Z + 0.22, x, y1, GRID_Z + 0.22], 3));
     this.markerGroup.add(new THREE.Line(vg, new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.4, gapSize: 0.3 })));
     (this.markerGroup.children[this.markerGroup.children.length - 1] as THREE.Line).computeLineDistances();
-    this.labels.set('c:mx', [x, y0 - 1.2, GRID_Z], ltr(`x = ${num(x)}`), 'lbl marker-x');
+    this.labels.set('c:mx', [x, y0 - 3.1, GRID_Z], ltr(`x = ${num(x)}`), 'lbl marker-x');
   }
 
   clearMarker(): void {
@@ -777,6 +788,18 @@ export class Course {
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.8, 6), std(0xdddddd));
     pole.position.set(x - 2.6, y + 1.4, -1.4);
     this.startTower.add(flag, pole);
+  }
+
+  /** In the chase camera, slabs the camera passes under/through fade so they never fill the screen. */
+  setRideFade(on: boolean): void {
+    this.staticGroup.traverse((o) => {
+      if (!o.userData.fadeInRide) return;
+      const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial;
+      if (m.userData.baseOpacity === undefined) m.userData.baseOpacity = m.opacity;
+      m.transparent = true;
+      m.depthWrite = !on;
+      m.opacity = on ? 0.18 : (m.userData.baseOpacity as number);
+    });
   }
 
   update(dt: number): void {
