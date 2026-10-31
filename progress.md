@@ -44,6 +44,25 @@
 - **Failure replay:** frames the whole grid beside the card. For joint gaps it draws both lines to their true crossing.
 - **QA:** every level ridden with its verified answer *and* a deliberate wrong answer, through key presses on the production build. All right answers succeed. Wrong answers fail with matching explanations; the exceptions are window levels, where a +1-step change can stay inside the window (by design).
 
+## 2026-10-31: playtest round 2 fixes
+
+- **Answer leaks closed:**
+  - Wide, unlabeled landings on the window levels.
+  - Redesigned expert runs (uneven table, joint on the bolt, ridge and cornice, ghost line read from its graph).
+  - Practice world 4 now needs the dog's equation.
+  - On no-hint levels the replay stops at the failure point.
+  - Tips no longer quote the level's numbers.
+- **Map:**
+  - One terrace per world; overlaps measured at none by `scripts/map-overlaps.mjs`.
+  - A phone list with practice and expert.
+  - A summit finale after level 18.
+- **Look:**
+  - Title attract mode and higher-contrast light.
+  - A glacier-ice grid board and sprite fog.
+  - Ride-only landing ledges and slabs that fade in the chase camera.
+  - Alpenglow dusk and a time of day per world.
+- **QA:** re-run on the production build. All 18 levels pass, and every wrong answer fails with a matching explanation (apart from the window levels, by design).
+
 ## Verification environment notes
 
 - The in-app browser pane isn't visible while this session has no window, so `requestAnimationFrame` doesn't run and pane screenshots are stale. All gameplay captures come from headless Chromium via Playwright (`scripts/drive.mjs`, `scripts/play-all.mjs`), using real clicks and keys plus `advanceTime`.

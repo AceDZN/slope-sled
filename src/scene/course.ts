@@ -444,7 +444,9 @@ export class Course {
     let seed = this.level.id * 97 + 13;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const back: THREE.Object3D[] = [];
-    for (let i = 0; i < 46; i++) {
+    const w = this.level.world;
+    const forest = w === 2 ? 90 : w === 3 ? 26 : 46;
+    for (let i = 0; i < forest; i++) {
       const x = x0 - 30 + rnd() * (x1 - x0 + 90);
       const z = -34 - rnd() * 50;
       if (rnd() < 0.35) continue;
@@ -466,6 +468,15 @@ export class Course {
       const py = this.assets.pylon();
       py.position.set(x0 + 6 + i * ((x1 - x0) / 2.2), 0, -62);
       back.push(py);
+    }
+    if (w === 3) {
+      // Rock Garden: basalt boulders scattered across the slopes.
+      for (let i = 0; i < 22; i++) {
+        const rk = this.assets.rock(2 + rnd() * 5, 3 + rnd() * 5);
+        rk.position.set(x0 - 25 + rnd() * (x1 - x0 + 70), 0, -30 - rnd() * 45);
+        rk.rotation.y = rnd() * 6;
+        back.push(rk);
+      }
     }
     this.staticGroup.add(...back);
     // Cable between pylons.

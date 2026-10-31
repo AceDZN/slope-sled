@@ -207,7 +207,7 @@ export class Game {
     this.chosen = st.segments.map((s) => !s.m.choices);
     this.selected = Math.max(0, st.segments.findIndex((s) => !s.given));
     this.hintOn = false;
-    this.world.setMood(this.level.mood ?? 'day');
+    this.world.setMood(this.level.mood ?? 'day', this.level.world);
     this.course.load(this.level, st);
     this.setupRival();
     this.redrawBuild();

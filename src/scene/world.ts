@@ -241,7 +241,7 @@ export class World {
     }
   }
 
-  setMood(mood: Mood): void {
+  setMood(mood: Mood, world = 1): void {
     const u = this.skyMat.uniforms;
     u.stars.value = 0;
     if (mood === 'night') {
@@ -273,6 +273,30 @@ export class World {
       (this.scene.fog as THREE.Fog).color.set(COLORS.horizon);
       this.renderer.toneMappingExposure = 1.12;
       if (this.grade) this.grade.uniforms.warmth.value = 0.05;
+      // Each world is its own time of day on the mountain.
+      if (world === 2) {
+        // Pine Forest: morning, cooler green-blue sky, softer sun through the trees.
+        u.mid.value.set(0x3f7fd8); u.bottom.value.set(0xcfe8ff);
+        u.sunDir.value.set(-0.45, 0.5, 0.45).normalize();
+        this.sun.intensity = 3.6; this.sun.color.set(0xfff6e8);
+        this.hemi.color.set(0xd2ecff); this.hemi.groundColor.set(0x5f8f9a);
+        if (this.grade) this.grade.uniforms.warmth.value = 0.02;
+      } else if (world === 3) {
+        // Rock Garden: crisp, cold high-altitude light, deep sky, hard shadows.
+        u.top.value.set(0x0f3a96); u.mid.value.set(0x1f5fcf); u.bottom.value.set(0xa9cdf7);
+        u.sunDir.value.set(0.35, 0.75, 0.3).normalize();
+        this.sun.intensity = 4.8; this.sun.color.set(0xffffff);
+        this.hemi.intensity = 1.1; this.hemi.groundColor.set(0x5a78c0);
+        if (this.grade) this.grade.uniforms.warmth.value = -0.01;
+      } else if (world === 4) {
+        // Twin Trails: golden late afternoon, long warm light.
+        u.mid.value.set(0x3f6fc8); u.bottom.value.set(0xffd9a8); u.sunColor.value.set(0xffd08a);
+        u.sunDir.value.set(0.8, 0.28, 0.35).normalize();
+        this.sun.intensity = 3.6; this.sun.color.set(0xffd9a0);
+        this.hemi.color.set(0xd8e2ff); this.hemi.groundColor.set(0x7a7fb8);
+        (this.scene.fog as THREE.Fog).color.set(0xe8dccb);
+        if (this.grade) this.grade.uniforms.warmth.value = 0.09;
+      }
     }
     this.sunDir.copy(u.sunDir.value as THREE.Vector3);
   }
