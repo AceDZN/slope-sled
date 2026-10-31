@@ -567,11 +567,11 @@ export class Game {
       const tr = this.sim!.judgement.track;
       if (o.reason === 'hazard') {
         const h = o.hazard;
-        this.course.drawTrack(tr, { mode: 'replay', fullPreview: false, selected: -1, badSeg: h.seg });
+        this.course.drawTrack(tr, { mode: 'replay', fullPreview: false, selected: -1, badSeg: h.seg, clipX: this.level.noHints ? h.x : undefined });
         const w = h.worst ?? { x: h.x, trackY: h.trackY, needY: h.needY };
         this.course.showMarker(w.x, w.trackY, ['never-met', 'not-tandem', 'tangled'].includes(h.kind) ? null : w.needY);
       } else {
-        this.course.drawTrack(tr, { mode: 'replay', fullPreview: false, selected: -1, badSeg: o.seg });
+        this.course.drawTrack(tr, { mode: 'replay', fullPreview: false, selected: -1, badSeg: o.seg, clipX: this.level.noHints ? o.x : undefined });
         this.course.showMarker(o.x, o.y, null);
       }
       this.setMode('crash');

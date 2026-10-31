@@ -38,6 +38,8 @@ export interface TrackDrawOpts {
   selected: number;
   /** Segment to paint red (wipeout replay). */
   badSeg?: number;
+  /** No-hint levels: draw the track only up to where the ride failed. */
+  clipX?: number;
 }
 
 export class Course {
@@ -479,6 +481,10 @@ export class Course {
       const seg = st.segments[i];
       let xa = p.xa;
       let xb = p.xb;
+      if (o.clipX !== undefined) {
+        if (xa >= o.clipX - 1e-6) return;
+        xb = Math.min(xb, o.clipX);
+      }
       const fog = o.mode === 'build' && !o.fullPreview && !seg.given;
       if (fog) [xa, xb] = fogVisibleRange(st, track, i);
       // Given segments show their nominal stretch while building, so their ends don't reveal the joint.
@@ -520,6 +526,7 @@ export class Course {
     if (o.mode === 'replay' || o.mode === 'ride') {
       for (const j of track.joints) {
         if (j.ok) continue;
+        if (o.clipX !== undefined && j.x > o.clipX + 1e-6) continue;
         if (o.mode === 'replay' && j.solution.kind === 'one') {
           // Show the graphical solution: both lines extended (dashed) to where they really cross.
           const X = j.solution.x, Y = j.solution.y;
