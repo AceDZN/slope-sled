@@ -117,3 +117,14 @@ The captures in `docs/visual-review/` were re-taken on the production build at 1
 - **Previous attempt:** after a wipeout, the rebuild view shows the last track faint and dashed, with a ✕ where it failed and the tag "הניסיון הקודם". On no-hint levels it stops where the failure replay stopped.
 - **Long goal lines:** when a race brief wraps to three lines, the segment panel moves down below it instead of covering it.
 - **Remaining deviations:** the dog is still a walk cycle underneath, with no tail or ear motion; there's no motion blur; the summit flags on the map crowd together a little.
+
+## Readable fog stubs, 31 Oct 2026
+
+- **The problem:** on the live site the slopes were hard to find while building.
+  - On level 3 nothing was drawn at all until all three slopes were picked.
+  - Everywhere else the visible 15 % (often 2–3 m) started under the start tower and the hero-scale kid, with a fog cloud sitting on top of it.
+- **Fix:**
+  - The 15 % rule stays: the brief requires it, so students compute instead of eyeballing, and the tests enforce it.
+  - The visible stub is now drawn over everything: a bright bar in the segment color, with a white start dot and an arrowhead in the line's direction.
+  - The fog clouds start past the arrowhead.
+  - On button levels each segment appears as soon as its slope is picked. Until then its card reads `y = ?x + b` instead of the placeholder `y = b`.

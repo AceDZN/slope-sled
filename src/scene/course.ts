@@ -40,6 +40,8 @@ export interface TrackDrawOpts {
   badSeg?: number;
   /** No-hint levels: draw the track only up to where the ride failed. */
   clipX?: number;
+  /** Segments not drawn yet (button levels: no slope picked). */
+  hidden?: boolean[];
 }
 
 export class Course {
@@ -502,6 +504,7 @@ export class Course {
     const st = this.stage;
     track.pieces.forEach((p, i) => {
       const seg = st.segments[i];
+      if (o.hidden?.[i]) return;
       let xa = p.xa;
       let xb = p.xb;
       if (o.clipX !== undefined) {
@@ -524,6 +527,7 @@ export class Course {
         this.trackGroup.add(mist);
       }
       if (ghost) this.trackGroup.add(this.dashes(p.line.m, p.line.b, xa, xb));
+      if (fog) this.trackGroup.add(this.stub(p.line.m, p.line.b, xa, xb, color, o.selected === i));
       if (o.mode !== 'ride') {
         // Thin glowing line on the grid for the drawn part.
         const g = new THREE.BufferGeometry();
@@ -628,17 +632,63 @@ export class Course {
     return g;
   }
 
+  /**
+   * The visible fog stub, drawn over everything (the start tower, the hero-scale kid, the mist) so a short
+   * stretch still reads: a bright bar in the segment color from a start dot to an arrowhead at its end.
+   */
+  private stub(m: number, b: number, xa: number, xb: number, color: number, selected: boolean): THREE.Group {
+    const g = new THREE.Group();
+    const ya = m * xa + b;
+    const yb = m * xb + b;
+    const L = Math.hypot(xb - xa, yb - ya);
+    const ang = Math.atan2(yb - ya, xb - xa);
+    const on = (mat: THREE.Material, order: number) => {
+      mat.depthTest = false;
+      mat.depthWrite = false;
+      mat.transparent = true;
+      return (mesh: THREE.Mesh) => ((mesh.renderOrder = order), mesh);
+    };
+    const w = selected ? 0.5 : 0.4;
+    const head = Math.min(0.9, L * 0.4);
+    const outerMat = new THREE.MeshBasicMaterial({ color: 0x0d2a4a, opacity: 0.85 });
+    const barMat = new THREE.MeshBasicMaterial({ color });
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.9 });
+    const outer = on(outerMat, 20)(new THREE.Mesh(new THREE.PlaneGeometry(L - head + 0.24, w + 0.24), outerMat));
+    const bar = on(barMat, 21)(new THREE.Mesh(new THREE.PlaneGeometry(L - head, w), barMat));
+    const core = on(coreMat, 22)(new THREE.Mesh(new THREE.PlaneGeometry(Math.max(0.01, L - head - 0.2), w * 0.28), coreMat));
+    for (const mesh of [outer, bar, core]) mesh.position.x = (L - head) / 2;
+    const tri = new THREE.Shape();
+    tri.moveTo(L, 0);
+    tri.lineTo(L - head, w * 1.25);
+    tri.lineTo(L - head, -w * 1.25);
+    tri.closePath();
+    const arrowOutline = new THREE.Shape();
+    arrowOutline.moveTo(L + 0.22, 0);
+    arrowOutline.lineTo(L - head - 0.12, w * 1.25 + 0.2);
+    arrowOutline.lineTo(L - head - 0.12, -w * 1.25 - 0.2);
+    arrowOutline.closePath();
+    const arrowBack = on(outerMat, 20)(new THREE.Mesh(new THREE.ShapeGeometry(arrowOutline), outerMat));
+    const arrow = on(barMat, 21)(new THREE.Mesh(new THREE.ShapeGeometry(tri), barMat));
+    const dotBack = on(outerMat, 20)(new THREE.Mesh(new THREE.CircleGeometry(w * 0.95 + 0.12, 20), outerMat));
+    const dot = on(coreMat, 22)(new THREE.Mesh(new THREE.CircleGeometry(w * 0.95, 20), coreMat));
+    g.add(outer, arrowBack, dotBack, bar, arrow, core, dot);
+    g.position.set(xa, ya, GRID_Z + 0.6);
+    g.rotation.z = ang;
+    return g;
+  }
+
   private mist(m: number, b: number, x: number, color: number): THREE.Group {
     // Soft drifting fog where the preview ends: billboards with a cloud texture, level at the stub's end.
     const g = new THREE.Group();
     const y = m * x + b;
     const tex = cloudPuff();
     for (let i = 0; i < 6; i++) {
-      const mat = new THREE.SpriteMaterial({ map: tex, color: i === 0 ? color : 0xf2f8ff, transparent: true, opacity: i === 0 ? 0.55 : 0.8 - i * 0.08, depthWrite: false });
+      // Starts past the stub's arrowhead so the cloud never covers the part you can see.
+      const mat = new THREE.SpriteMaterial({ map: tex, color: i === 0 ? color : 0xf2f8ff, transparent: true, opacity: i === 0 ? 0.4 : 0.7 - i * 0.08, depthWrite: false });
       const sp = new THREE.Sprite(mat);
-      const w = 4.2 + i * 0.9;
+      const w = 3.4 + i * 0.8;
       sp.scale.set(w, w * 0.55, 1);
-      sp.position.set(x + 1.2 + i * 1.5, y + Math.sin(i * 1.9) * 0.5 + 0.3, 0.6 + (i % 2) * 0.4);
+      sp.position.set(x + w * 0.5 + 0.6 + i * 1.4, y + Math.sin(i * 1.9) * 0.5 + 0.3, 0.6 + (i % 2) * 0.4);
       sp.userData.mist = i;
       g.add(sp);
     }

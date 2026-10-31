@@ -256,9 +256,9 @@ export class Game {
 
   private redrawBuild(): void {
     const tr = this.track;
-    const drawable = this.chosen.every(Boolean);
-    this.course.drawTrack(tr, { mode: 'build', fullPreview: !!this.level.fullPreview && drawable, selected: this.selected });
-    if (!drawable) this.course.drawTrack({ ...tr, pieces: [] }, { mode: 'build', fullPreview: false, selected: 0 });
+    // Each segment appears as soon as its slope is picked; the others wait (button levels start unpicked).
+    const hidden = this.chosen.map((c) => !c);
+    this.course.drawTrack(tr, { mode: 'build', fullPreview: !!this.level.fullPreview, selected: this.selected, hidden });
     const y0 = trackY(tr, tr.x0);
     this.course.placeStart(tr.x0, y0);
     this.placeRiderAt(tr.x0, y0, Math.atan(tr.pieces[0].line.m), 0);
@@ -1085,7 +1085,8 @@ export class Game {
     st.segments.forEach((s, i) => {
       const p = this.params[i];
       const eq = this.els[`eq${i}`];
-      if (eq) eq.innerHTML = ltr(equation(p.m, p.b));
+      // Before a slope is picked the card shows the blank, not the placeholder m = 0.
+      if (eq) eq.innerHTML = ltr(this.chosen[i] ? equation(p.m, p.b) : `y = ?x ${p.b < 0 ? '−' : '+'} ${num(Math.abs(p.b))}`);
       const mv = this.els[`mv${i}`];
       if (mv) mv.innerHTML = ltr(num(p.m));
       const bv = this.els[`bv${i}`];
