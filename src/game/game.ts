@@ -155,8 +155,11 @@ export class Game {
     return LEVEL_DIFFICULTY[this.level.id] ?? 'medium';
   }
 
+  private lessonClosedAt = 0;
+
   closeLesson(): void {
     if (!this.lesson) return;
+    this.lessonClosedAt = performance.now();
     if (!this.progress.seenLessons.includes(this.lesson)) this.progress.seenLessons.push(this.lesson);
     saveProgress(this.progress);
     this.lesson = null;
@@ -791,7 +794,7 @@ export class Game {
       this.labels.hidden = true;
       this.course.setGridOpacity(0);
       const a = 0.5 + this.modeT * 0.3;
-      const want = new THREE.Vector3(p.x - 9 * Math.cos(a), p.y + 3.6, 9 * Math.sin(a) + 2);
+      const want = new THREE.Vector3(p.x - 6 * Math.cos(a), p.y + 2.6, 6 * Math.sin(a) + 1.5);
       cam.position.lerp(want, Math.min(1, dtReal * 2.5));
       cam.lookAt(p.x, p.y + 0.8, 0);
       // Dog leaps into your lap.
@@ -928,11 +931,11 @@ export class Game {
 
   private topBar(): string {
     const stars = this.progress.stars[this.level.id] ?? 0;
-    const st = [0, 1, 2].map((i) => `<span class="star ${i < stars ? 'on' : ''}">★</span>`).join('');
+    const st = this.generated ? '' : [0, 1, 2].map((i) => `<span class="star ${i < stars ? 'on' : ''}">★</span>`).join('');
     const hint = this.level.noHints || !this.stage.hint ? '' : `<button class="hint-btn" data-a="hint" aria-label="רמז (עולה כוכב)" title="רמז (עולה כוכב)" ${this.mode !== 'build' ? 'disabled' : ''}>💡</button>`;
     const book = this.mode === 'build' ? `<button class="round" data-a="lesson" aria-label="שיעור קצר" title="שיעור קצר">📖</button>` : '';
     return `<div class="tl"><button class="round" data-a="pause" aria-label="השהיה">${ICON.pause}</button>${book}<button class="round" data-a="mute" aria-label="השתקה">${this.sound.muted ? ICON.mute : ICON.sound}</button></div>
-      <div class="tr"><div class="pill">${ICON.mtn}<div class="lvname"><b>${this.generated ? '❄' : `שלב ${this.level.id}`}</b> : ${this.level.title}</div><span class="diff diff-${this.difficulty}">${DIFFICULTY_LABEL[this.difficulty]}</span><div class="stars">${st}</div></div>${hint}</div>`;
+      <div class="tr"><div class="pill">${ICON.mtn}<div class="lvname"><b>${this.generated ? (this.level.id >= 200 ? '🏔' : '❄') : `שלב ${this.level.id}`}</b><span class="lvtitle"> : ${this.level.title}</span></div><span class="diff diff-${this.difficulty}">${DIFFICULTY_LABEL[this.difficulty]}</span><div class="stars">${st}</div></div>${hint}</div>`;
   }
 
   renderHud(): void {
@@ -961,7 +964,7 @@ export class Game {
   private buildHtml(): string {
     const st = this.stage;
     const lv = this.level;
-    let html = `<div class="goal">${st.brief ? `<span class="brief">${st.brief}</span>` : ''}${lv.goal}</div>`;
+    let html = `<div class="goal"><span class="goal-title">${lv.title} · </span>${st.brief ? `<span class="brief">${st.brief}</span>` : ''}${lv.goal}</div>`;
     if (this.hintOn && st.hint) html += `<div class="hint-text">💡 ${st.hint.text}</div>`;
     const choiceSeg = st.segments.findIndex((s) => s.m.choices);
     if (choiceSeg >= 0 && st.segments.length === 1 && st.segments[0].b.fixed !== undefined) {
@@ -1010,13 +1013,13 @@ export class Game {
         .join('')}</div></div>` : ''}
       ${mEd && !s.m.choices ? `<div class="row"><div class="lab">שיפוע ${ltr('m')}<small>${ltr('Δy / Δx')}</small></div>
         <div class="knob" data-knob="${i}"><i data-el="knob${i}"></i></div>
-        <button class="step" data-a="m-" data-i="${i}" aria-label="הקטנת שיפוע">−</button><div class="val" data-el="mv${i}"></div><button class="step" data-a="m+" data-i="${i}" aria-label="הגדלת שיפוע">+</button></div>
+        <div class="stepper" dir="ltr"><button class="step" data-a="m-" data-i="${i}" aria-label="הקטנת שיפוע">−</button><div class="val" data-el="mv${i}"></div><button class="step" data-a="m+" data-i="${i}" aria-label="הגדלת שיפוע">+</button></div></div>
         <div class="row"><div class="riserun" data-el="rr${i}"></div></div>
         <input class="slider" dir="ltr" type="range" min="${s.m.min ?? -3}" max="${s.m.max ?? 3}" step="${s.m.step ?? 0.05}" data-slider="m" data-i="${i}" aria-label="שיפוע">` : ''}
       ${bEd && s.b.choices ? `<div class="row"><div class="lab">האיבר החופשי ${ltr('b')}</div><div class="chips">${s.b.choices
         .map((c) => `<button class="chip" data-a="choiceb" data-k="b" data-i="${i}" data-v="${c}">${ltr(num(c))}</button>`)
         .join('')}</div></div>` : ''}
-      ${bEd && !s.b.choices ? `<div class="row"><div class="lab">האיבר החופשי ${ltr('b')}</div><button class="step" data-a="b-" data-i="${i}" aria-label="הקטנת b">−</button><div class="val" data-el="bv${i}"></div><button class="step" data-a="b+" data-i="${i}" aria-label="הגדלת b">+</button></div>` : ''}
+      ${bEd && !s.b.choices ? `<div class="row"><div class="lab">האיבר החופשי ${ltr('b')}</div><div class="stepper" dir="ltr"><button class="step" data-a="b-" data-i="${i}" aria-label="הקטנת b">−</button><div class="val" data-el="bv${i}"></div><button class="step" data-a="b+" data-i="${i}" aria-label="הגדלת b">+</button></div></div>` : ''}
       <div class="range" data-el="rng${i}">${xa !== null ? '' : ''}</div></div>`;
   }
 
@@ -1116,7 +1119,7 @@ export class Game {
         <div class="box"><div class="txt">המסלול שלכם:${this.params.map((p, i) => `<div class="eqrow"><span class="seg-tag" style="--c:${SEG_CSS[i % 4]}">${i + 1}</span> ${ltr(equation(p.m, p.b))}</div>`).join('')}
         <div class="meta" style="color:#4b5b80">ניסיונות: ${ltr(String(this.builds))}${this.hintUsed ? ' · השתמשתם ברמז' : ''} · ❄ ${ltr(String(this.flakes))}${this.tricks ? ` · טריקים: ${ltr(String(this.tricks))}` : ''}</div></div></div>
         ${this.lastStyle ? `<div class="style"><div class="style-total">ניקוד סגנון <b>${ltr(String(this.lastStyle.total))}</b>${this.lastStyle.isBest ? ' <span class="newbest">שיא חדש!</span>' : ` <small>שיא: ${ltr(String(this.lastStyle.best))}</small>`}</div>
-          <div class="chips-row"><span>❄ ${ltr('+' + this.lastStyle.flakes)}</span><span>★ טריקים ${ltr('+' + this.lastStyle.tricks)}</span><span>🛬 נחיתה ${ltr('+' + this.lastStyle.clean)}</span><span>💨 מהירות ${ltr('+' + this.lastStyle.speed)}</span></div></div>` : ''}
+          <div class="chips-row"><span>❄ פתיתים ${ltr('+' + this.lastStyle.flakes)}</span><span>★ טריקים ${ltr('+' + this.lastStyle.tricks)}</span><span>✔ נחיתה נקייה ${ltr('+' + this.lastStyle.clean)}</span><span>💨 מהירות ${ltr('+' + this.lastStyle.speed)}</span></div></div>` : ''}
         <div class="btns"><button class="btn primary" data-a="next">${nextLabel}</button><button class="btn secondary" data-a="retry">שוב</button></div></div>`;
     }
     const rows = ex.rows.map(([l, v, tone]) => `<div><span>${l}</span><span class="${tone}">${v}</span></div>`).join('');
@@ -1381,7 +1384,11 @@ export class Game {
         else if (k === 'ArrowDown') { this.nudge('m', -1, e.shiftKey); e.preventDefault(); }
         else if (k === 'ArrowRight' || k === 'PageUp') { this.nudge('b', 1, e.shiftKey); e.preventDefault(); }
         else if (k === 'ArrowLeft' || k === 'PageDown') { this.nudge('b', -1, e.shiftKey); e.preventDefault(); }
-        else if (k === 'Enter') { this.go(); e.preventDefault(); }
+        else if (k === 'Enter') {
+          // A held/repeated Enter from closing a lesson card must not launch the ride.
+          if (!e.repeat && performance.now() - this.lessonClosedAt > 600) this.go();
+          e.preventDefault();
+        }
         else if (k === 'h' || k === 'H') this.useHint();
         else if (k === 'r' || k === 'R') this.restartLevel();
         else if (k === 'Tab') {

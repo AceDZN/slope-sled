@@ -88,7 +88,8 @@ export class Course {
     const minor: number[] = [];
     const major: number[] = [];
     const span = Math.max(x1 - x0, y1 - y0);
-    const labelStep = span > 30 ? 4 : 2;
+    const narrow = typeof window !== 'undefined' && window.innerWidth <= 760;
+    const labelStep = (span > 30 ? 4 : 2) * (narrow ? 2 : 1);
     for (let x = Math.ceil(x0); x <= x1; x++) (x % labelStep === 0 ? major : minor).push(x, y0, GRID_Z, x, y1, GRID_Z);
     for (let y = Math.ceil(y0); y <= y1; y++) (y % labelStep === 0 ? major : minor).push(x0, y, GRID_Z, x1, y, GRID_Z);
     const mk = (arr: number[], color: number, opacity: number) => {

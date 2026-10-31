@@ -43,7 +43,7 @@ export function explain(outcome: RideOutcome, stage: StageSpec, params?: Array<{
     subtitle,
     rows,
     text,
-    plain: strip(`${title} ${subtitle}. ${rows.map((r) => `${r[0]} ${r[1]}`).join(', ')}. ${text}`),
+    plain: strip([`${title} ${subtitle}`, rows.map((r) => `${r[0]} ${r[1]}`).join(', '), text].filter(Boolean).join(' · ')),
   });
   if (outcome.ok) return mk('יש!', 'הגעתם!', [], 'המסלול שלכם עבד.');
 

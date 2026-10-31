@@ -289,3 +289,10 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
 .cleared.finale { background: linear-gradient(135deg, #ffc93c, #ff7a1a 60%, #b56cff); border-color: #fff; font-size: 16px; color: #2a0f00; }
 .cleared.finale b { font-size: 22px; }
 .title-overlay { background: linear-gradient(to bottom, rgba(8, 22, 60, 0.55), rgba(8, 22, 60, 0.15) 38%, transparent 60%); }
+.stepper { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; }
+.goal-title { display: none; font-weight: 700; }
+@media (max-width: 760px) {
+  .lvtitle { display: none; }
+  .goal-title { display: inline; }
+  .pill { flex: none; }
+}
