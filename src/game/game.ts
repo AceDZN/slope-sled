@@ -544,7 +544,15 @@ export class Game {
       this.dog.setPose('jump');
       this.fx.sparkles(this.rider.root.position.clone().add(new THREE.Vector3(0, 1, 0)));
       this.fx.burst(this.rider.root.position.clone(), 0.5);
-      this.popup(CHEERS[this.level.id % CHEERS.length]);
+      this.popup(this.level.id === 18 ? 'כבשתם את החרמון!' : CHEERS[this.level.id % CHEERS.length]);
+      if (this.level.id === 18) {
+        for (let i = 0; i < 6; i++) {
+          setTimeout(() => {
+            this.fx.sparkles(this.rider.root.position.clone().add(new THREE.Vector3((Math.random() - 0.5) * 8, 4 + Math.random() * 4, (Math.random() - 0.5) * 6)));
+            this.sound.star(i % 3);
+          }, 250 + i * 300);
+        }
+      }
       this.progress.flakes += this.flakes;
       this.computeStyle();
       this.setMode('crash'); // reuse the slow orbit for a short celebration
@@ -706,7 +714,7 @@ export class Game {
     this.world.update(dtReal);
     this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.mode === 'select' || this.mode === 'title' ? this.map.cameraPose(0).look : this.viewCenter());
     if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title' || this.mode === 'select' || (this.mode === 'result' && !!this.outcome?.ok);
-    this.labels.only = this.mode === 'select' ? ['map:'] : [];
+    this.labels.only = this.mode === 'select' && this.root.clientWidth > 760 ? ['map:'] : [];
   }
 
   private updateCrash(dt: number, dtReal: number): void {
@@ -1040,7 +1048,8 @@ export class Game {
       const nextLabel = this.generated ? 'ריצה חדשה' : last ? (LEVELS.some((l) => l.id === this.level.id + 1) ? 'לשלב הבא' : 'למפה') : 'למרוץ הבא';
       return `<div class="result win"><h1>${last ? 'יש!' : 'הצלחה!'}</h1><h2>${last ? 'הגעתם לבקתה' : `מרוץ ${this.stageIdx + 1} מתוך ${this.level.stages.length}`}</h2>
         ${last ? `<div class="bigstars">${stars}</div>` : ''}
-        ${this.worldCleared ? `<div class="cleared">🎉 סיימתם את <b>${WORLD_NAMES[this.worldCleared][0]}</b>!<br>נפתחו במפה: ❄ תרגול ו־🏔 מומחה.${this.worldCleared < 4 ? `<br>העולם הבא: <b>${WORLD_NAMES[this.worldCleared + 1][0]}</b> — ${WORLD_NAMES[this.worldCleared + 1][1]}` : '<br>נשארה רק הירידה הגדולה מהפסגה!'}</div>` : ''}
+        ${this.worldCleared === 4 && this.level.id === 18 ? `<div class="cleared finale">🏔 <b>כבשתם את החרמון!</b><br>כל ${ltr('18')} השלבים: שיפוע, משוואת ישר, אי-שוויונות ומערכות.<br>${ltr(`★ ${Object.values(this.progress.stars).reduce((a, b) => a + b, 0)} / 54`)} · עכשיו נפתח 🏔 מומחה בכל עולם — נסו להשיג את כל הכוכבים!</div>` : ''}
+        ${this.worldCleared && !(this.worldCleared === 4 && this.level.id === 18) ? `<div class="cleared">🎉 סיימתם את <b>${WORLD_NAMES[this.worldCleared][0]}</b>!<br>נפתחו במפה: ❄ תרגול ו־🏔 מומחה.${this.worldCleared < 4 ? `<br>העולם הבא: <b>${WORLD_NAMES[this.worldCleared + 1][0]}</b> — ${WORLD_NAMES[this.worldCleared + 1][1]}` : '<br>נשארה רק הירידה הגדולה מהפסגה!'}</div>` : ''}
         <div class="box"><div class="txt">המסלול שלכם:${this.params.map((p, i) => `<div class="eqrow"><span class="seg-tag" style="--c:${SEG_CSS[i % 4]}">${i + 1}</span> ${ltr(equation(p.m, p.b))}</div>`).join('')}
         <div class="meta" style="color:#4b5b80">ניסיונות: ${ltr(String(this.builds))}${this.hintUsed ? ' · השתמשתם ברמז' : ''} · ❄ ${ltr(String(this.flakes))}${this.tricks ? ` · טריקים: ${ltr(String(this.tricks))}` : ''}</div></div></div>
         ${this.lastStyle ? `<div class="style"><div class="style-total">ניקוד סגנון <b>${ltr(String(this.lastStyle.total))}</b>${this.lastStyle.isBest ? ' <span class="newbest">שיא חדש!</span>' : ` <small>שיא: ${ltr(String(this.lastStyle.best))}</small>`}</div>
@@ -1093,7 +1102,7 @@ export class Game {
       const btns = open
         ? `<div class="sign-btns"><button data-a="fresh" data-i="${w}" title="ריצה חדשה באותה רמה">❄ תרגול${fr ? ` ${ltr('✓' + fr)}` : ''}</button><button class="ex" data-a="expert" data-i="${w}" title="רמת מומחה, בלי רמזים">🏔 מומחה${ex ? ` ${ltr('✓' + ex)}` : ''}</button></div>`
         : `<div class="sign-lock">🔒 תרגול ומומחה — אחרי שלב ההעברה</div>`;
-      this.labels.set(`map:w${w}`, c.clone().add(new THREE.Vector3(0, 7, 0)), `<div class="sign ${done ? 'done' : ''}"><b>${done ? '✓ ' : ''}${WORLD_NAMES[w][0]}</b><small>${WORLD_NAMES[w][1]}</small>${btns}</div>`, 'lbl map-sign');
+      this.labels.set(`map:w${w}`, c.clone(), `<div class="sign ${done ? 'done' : ''}"><b>${done ? '✓ ' : ''}${WORLD_NAMES[w][0]}</b><small>${WORLD_NAMES[w][1]}</small>${btns}</div>`, 'lbl map-sign');
     });
   }
 
@@ -1112,14 +1121,15 @@ export class Game {
           .join('');
         const transfer = LEVELS.filter((l) => l.world === w && l.transfer).map((l) => l.id);
         const open = transfer.some((id) => (this.progress.stars[id] ?? 0) > 0);
-        const fresh = `<button class="flag fresh ${open ? '' : 'locked'}" data-a="fresh" data-i="${w}" ${open ? '' : 'disabled'} title="${open ? '' : 'נפתח אחרי שלב ההעברה של העולם'}"><div class="n">❄</div><div class="ft">ריצה חדשה${open ? '' : ' · נפתח בסוף העולם'}</div></button>`;
+        const fresh = `<button class="flag fresh ${open ? '' : 'locked'}" data-a="fresh" data-i="${w}" ${open ? '' : 'disabled'} title="${open ? '' : 'נפתח אחרי שלב ההעברה של העולם'}"><div class="n">❄</div><div class="ft">❄ תרגול${open ? '' : ' · נפתח בסוף העולם'}</div></button>
+          <button class="flag fresh expert ${open ? '' : 'locked'}" data-a="expert" data-i="${w}" ${open ? '' : 'disabled'}><div class="n">🏔</div><div class="ft">מומחה · בלי רמזים</div></button>`;
         return `<div class="world"><h3>${WORLD_NAMES[w][0]}</h3><div class="sub">${WORLD_NAMES[w][1]}</div><div class="flags">${flags}${fresh}</div></div>`;
       })
       .join('');
     const freshBtns = '';
     const curL = levelById(cur);
-    return `<div class="select"><div class="top"><h1>⛰ מפת החרמון</h1><div class="pill"><div class="lvname">★ ${ltr(String(total))} / ${ltr(String(LEVELS.length * 3))} · ❄ ${ltr(String(this.progress.flakes))}</div></div></div>
-      <details class="worlds-list"><summary>רשימת שלבים</summary><div class="worlds">${worlds}</div></details>
+    return `<div class="select"><div class="top"><h1>⛰ מפת החרמון</h1><div class="pill"><div class="lvname">★ ${ltr(`${total} / ${LEVELS.length * 3}`)} · ❄ ${ltr(String(this.progress.flakes))}</div></div></div>
+      <details class="worlds-list" ${this.root.clientWidth <= 760 ? 'open' : ''}><summary>רשימת שלבים</summary><div class="worlds">${worlds}</div></details>
       <div class="bottom"><div class="info"><b>השלב הבא: ${curL.id} · ${curL.title}</b> <span class="diff diff-${LEVEL_DIFFICULTY[curL.id] ?? 'medium'}">${DIFFICULTY_LABEL[LEVEL_DIFFICULTY[curL.id] ?? 'medium']}</span><br>${ltr('x')} גדל משמאל לימין גם בממשק בעברית · שיפוע שלילי = ירידה<div class="legend">${(['easy', 'medium', 'hard', 'transfer', 'final', 'expert'] as Difficulty[]).map((d) => `<span class="diff diff-${d}">${DIFFICULTY_LABEL[d]}</span>`).join('')}</div></div><div class="fresh-row">${freshBtns}</div><button class="btn primary" style="flex:none;min-width:180px" data-a="level" data-i="${cur}">שחקו</button></div></div>`;
   }
 

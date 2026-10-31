@@ -20,6 +20,7 @@ export class TrailMap {
   readonly flags: MapFlag[] = [];
   private cloths = new Map<number, THREE.Mesh>();
   readonly worldCenters: THREE.Vector3[] = [];
+  private rowEnds: Array<[THREE.Vector3, THREE.Vector3]> = [];
 
   constructor(assets: Assets, levels: Array<{ id: number; world: number }>) {
     this.group.position.copy(MAP_ORIGIN);
@@ -38,24 +39,31 @@ export class TrailMap {
     mountain.receiveShadow = true;
     this.group.add(mountain);
 
-    // A winding trail from the summit down to the valley: 18 stops.
+    // One terrace per world, climbing the front face; flags evenly spaced so labels never overlap.
+    // Row 1 runs right → left (RTL start), and each next row turns back.
+    const rows: Array<{ d: number; half: number }> = [
+      { d: 60, half: 44 }, { d: 45, half: 38 }, { d: 30, half: 27 }, { d: 15, half: 15 },
+    ];
+    const byWorld = [1, 2, 3, 4].map((w) => levels.filter((l) => l.world === w));
     const pts: THREE.Vector3[] = [];
-    const N = levels.length;
-    for (let i = 0; i < N; i++) {
-      const t = i / (N - 1);
-      // Serpentine down the front face, from the summit (t = 0) to the valley (t = 1).
-      const r = 6 + t * 54;
-      const x = Math.sin(t * Math.PI * 3.2) * (13 + t * 24);
-      const z = -22 + r * 0.9;
-      pts.push(new THREE.Vector3(x, 0, z));
-    }
-    // Snap each stop onto the cone surface (height falls off with distance from the summit axis).
+    this.rowEnds = [];
+    byWorld.forEach((ls, k) => {
+      const { d, half } = rows[k];
+      const n = ls.length;
+      const dir = k % 2 === 0 ? -1 : 1; // row 1: x from +half to −half
+      const rowPts: THREE.Vector3[] = [];
+      for (let i = 0; i < n; i++) {
+        const x = dir * (-half + (2 * half * i) / Math.max(1, n - 1));
+        rowPts.push(new THREE.Vector3(x, 0, -22 + d));
+      }
+      this.rowEnds.push([rowPts[0].clone(), rowPts[n - 1].clone()]);
+      pts.push(...rowPts);
+    });
     for (const v of pts) {
-      const d = Math.hypot(v.x, v.z + 22);
-      v.y = Math.max(0.3, 46 * (1 - d / 70)) + 2.4;
+      const dd = Math.hypot(v.x, v.z + 22);
+      v.y = Math.max(0.3, 46 * (1 - dd / 70)) + 2.4;
     }
-    // The trail is walked from the bottom (level 1) up to the summit (level 18).
-    pts.reverse();
+    for (const pair of this.rowEnds) for (const v of pair) v.y = Math.max(0.3, 46 * (1 - Math.hypot(v.x, v.z + 22) / 70)) + 2.4;
     const curve = new THREE.CatmullRomCurve3(pts);
     const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 240, 0.9, 6), std(0x9fd8ff, { emissive: 0x2a8fd8, emissiveIntensity: 0.35 }));
     this.group.add(tube);
@@ -71,13 +79,10 @@ export class TrailMap {
       this.flags.push({ id: l.id, world: l.world, pos: pos.clone().add(MAP_ORIGIN).add(new THREE.Vector3(0, 5.2, 0)) });
     });
     for (let w = 1; w <= 4; w++) {
-      const f = this.flags.filter((x) => x.world === w);
-      const c = f.reduce((a, x) => a.add(x.pos), new THREE.Vector3()).multiplyScalar(1 / f.length);
-      // Signs stand beside their stretch of trail, alternating sides so they never cover the flags.
-      const minX = Math.min(...f.map((x) => x.pos.x)), maxX = Math.max(...f.map((x) => x.pos.x));
-      c.x = w % 2 ? minX - 16 : maxX + 16;
-      c.y -= 4;
-      this.worldCenters.push(c);
+      // Each world's sign stands just outside the start of its terrace.
+      const start = this.rowEnds[w - 1][0];
+      const out = Math.sign(start.x) || 1;
+      this.worldCenters.push(start.clone().add(MAP_ORIGIN).add(new THREE.Vector3(out * (w === 1 ? 4 : 19), w === 1 ? 9 : -1.5, w === 1 ? -6 : 0)));
     }
     // Forest and a hut at the foot of the trail.
     let seed = 7;
@@ -113,9 +118,9 @@ export class TrailMap {
 
   /** Camera pose that frames the whole mountain. */
   cameraPose(t: number): { pos: THREE.Vector3; look: THREE.Vector3 } {
-    const look = MAP_ORIGIN.clone().add(new THREE.Vector3(0, 20, 0));
+    const look = MAP_ORIGIN.clone().add(new THREE.Vector3(0, 18, 4));
     const a = Math.sin(t * 0.12) * 0.1;
-    const pos = look.clone().add(new THREE.Vector3(Math.sin(a) * 125, 52, Math.cos(a) * 125));
+    const pos = look.clone().add(new THREE.Vector3(Math.sin(a) * 118, 62, Math.cos(a) * 118));
     return { pos, look };
   }
 }
