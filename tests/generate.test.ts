@@ -37,3 +37,17 @@ for (const world of [1, 2, 3, 4] as const) {
     }
   });
 }
+
+test('expert and window runs never label the answer: hidden gates, unlabeled powder landings', () => {
+  for (const world of [1, 2, 3, 4] as const) {
+    for (let seed = 1; seed <= 6; seed++) {
+      const st = generateExpert(world, seed).stages[0];
+      for (const o of st.objects) if (o.kind === 'gate') assert.equal(o.hideLabel, true, `expert ${world}/${seed} gate ${o.id}`);
+      assert.equal(st.finish.label, 'none', `expert ${world}/${seed} finish`);
+    }
+    const p3 = generateRun(3, world).stages[0];
+    assert.equal(p3.finish.label, 'none');
+    const p4 = generateRun(4, world).stages[0];
+    assert.equal(p4.finish.label, 'x');
+  }
+});

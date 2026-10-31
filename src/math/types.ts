@@ -82,6 +82,8 @@ export interface FinishSpec {
   y: number;
   tol?: number;
   look?: 'lodge' | 'hut' | 'powder';
+  /** What the build view shows: the full point (default), only its x, or nothing (wide powder landings). */
+  label?: 'full' | 'x' | 'none';
 }
 
 export interface HintSpec {

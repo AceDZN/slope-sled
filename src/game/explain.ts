@@ -25,7 +25,10 @@ function riseRunTip(stage: StageSpec, gx: number, gy: number, seg: number): stri
   if (seg !== 0 || s.b.fixed === undefined || s.m.fixed !== undefined) return '';
   if (s.x0 !== 0) return '';
   const y0 = s.b.fixed; // start height: the line at x = 0
-  return ` מההתחלה לשער: ${ltr(`Δy = ${num(gy - y0)}`)}, ${ltr(`Δx = ${num(gx)}`)}. שיפוע = ${ltr('Δy ÷ Δx')} — השינוי בגובה חלקי השינוי במרחק, לא להפך.`;
+  void y0;
+  void gx;
+  void gy;
+  return ` בדקו: שיפוע = ${ltr('Δy ÷ Δx')} — השינוי בגובה חלקי השינוי במרחק, לא להפך.`;
 }
 
 const WHO: Record<string, string> = { dog: 'הכלב', friend: 'החבר', ghost: 'מסלול הרוח', rival: 'היריב' };

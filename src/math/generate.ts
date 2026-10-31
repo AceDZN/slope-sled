@@ -93,7 +93,7 @@ function build(world: 1 | 2 | 3 | 4, r: () => number): LevelSpec | null {
     const rock = pick(r, [2, 3, 4, 5]);
     // Rocks bind at the far end: m L + b ≥ rock. Branch at the start: b < branch.
     const bLo = rock - m * L;
-    const width = pick(r, [1.5, 2, 2.5]);
+    const width = pick(r, [1.5, 2]);
     const branch = bLo + width + 0.5;
     if (!isHalf(bLo) || !isHalf(branch)) return null;
     const mid = bLo + width / 2;
@@ -103,7 +103,7 @@ function build(world: 1 | 2 | 3 | 4, r: () => number): LevelSpec | null {
         { kind: 'constraint', id: 'rocks', side: 'above', m: 0, b: rock, x0: 0, x1: L, look: 'rocks' },
         { kind: 'constraint', id: 'branch', side: 'below', m: 0, b: branch, x0: 0, x1: 2, strict: true, look: 'branch' },
       ],
-      finish: { x: L, y: m * L + mid, tol: width / 2 + 0.01, look: 'powder' },
+      finish: { x: L, y: m * L + mid, tol: 30, look: 'powder', label: 'none' },
       hint: { boundaries: ['rocks', 'branch'], text: 'בדקו את שני הקצוות: איפה המסלול הכי נמוך, ואיפה הענף.' },
     }, 'בחרו b כך שהמסלול יעבור מעל הסלעים ומתחת לענף.');
   }
@@ -111,7 +111,7 @@ function build(world: 1 | 2 | 3 | 4, r: () => number): LevelSpec | null {
   const md = pick(r, [-0.25, -0.5, -0.75]);
   const bd = pick(r, [14, 16, 18, 20]);
   const ys = bd + pick(r, [6, 8, 10, 12]);
-  const xh = pick(r, [8, 10, 12, 16, 20]);
+  const xh = pick(r, [16, 20, 24]);
   const yh = md * xh + bd;
   const m = (yh - ys) / xh;
   if (yh < 0 || !isHalf(yh) || Math.abs(m / 0.05 - Math.round(m / 0.05)) > 1e-9 || Math.abs(m + 1) < 1e-9) return null;
@@ -119,8 +119,8 @@ function build(world: 1 | 2 | 3 | 4, r: () => number): LevelSpec | null {
     segments: [{ id: 'a', x0: 0, x1: xh, m: mDial, b: { fixed: ys } }],
     objects: [{ kind: 'gate', id: 'meet', x: xh, y: yh, look: 'meet', hideLabel: true }],
     rival: { who: 'dog', m: md, b: bd, x0: 0, x1: xh + 4 },
-    finish: { x: xh, y: yh, look: 'hut' },
-    hint: { points: [[0, ys], [xh, yh]], text: 'מצאו את גובה הכלב ליד הבקתה — זו נקודת הפגישה.' },
+    finish: { x: xh, y: yh, look: 'hut', label: 'x' },
+    hint: { points: [[0, ys]], text: 'הציבו את x של הבקתה במשוואה של הכלב — זה הגובה של נקודת הפגישה.' },
   }, 'פגשו את הכלב בדיוק ליד הבקתה.');
 }
 
@@ -154,15 +154,14 @@ export function solveEditable(stage: StageSpec): StageParams[] {
 }
 
 const EXPERT_TITLES: Record<number, string> = {
-  1: 'מומחה: שני שערים, שיפוע אחד',
-  2: 'מומחה: מפרק בנקודת חיתוך',
+  1: 'מומחה: הטבלה העקומה',
+  2: 'מומחה: מפרק על הבורג',
   3: 'מומחה: רכס משופע וכרכוב',
-  4: 'מומחה: נתיב מקביל לרוח',
+  4: 'מומחה: במקביל לרוח',
 };
 
-/** Harder generated runs: fractions of steps, joints, sloped inequalities, equations read from a graph. */
+/** Harder generated runs. Each one needs a two-step computation and labels only the data, never the answer point. */
 function buildExpert(world: 1 | 2 | 3 | 4, r: () => number): LevelSpec | null {
-  const mDial: ParamSpec = { min: -3, max: 1.5, step: 0.05, initial: 0 };
   const lv = (v: { x0?: number; x1: number; y0?: number; y1: number }, st: Omit<StageSpec, 'id'>, goal: string): LevelSpec => ({
     id: 200 + world,
     world,
@@ -174,40 +173,45 @@ function buildExpert(world: 1 | 2 | 3 | 4, r: () => number): LevelSpec | null {
     stages: [{ id: `expert-${world}`, ...st }],
   });
   if (world === 1) {
-    // Steeper and less round slopes; two unlabeled-in-between gates on one line.
-    const y0 = pick(r, [26, 28, 30, 32]);
-    const m = pick(r, [-0.35, -0.45, -0.55, -0.65, -0.85, -1.15]);
-    const L = pick(r, [20, 24, 28, 32, 36, 40]);
-    const xa = pick(r, [L / 4, L / 2]);
-    const xb = pick(r, [(3 * L) / 4, L - 2]);
-    const ya = y0 + m * xa, yb = y0 + m * xb, ye = y0 + m * L;
-    if (ye < 0 || !isHalf(ya) || !isHalf(yb) || !isHalf(ye) || !Number.isInteger(xa) || !Number.isInteger(xb)) return null;
-    return lv({ x1: L + 4, y1: y0 + 4 }, {
-      segments: [{ id: 'a', x0: 0, x1: L, m: mDial, b: { fixed: y0 } }],
+    // Rate of change from an uneven table (no x = 0 row): find m and the start height b.
+    const m = pick(r, [-0.25, -0.5, -0.75, -1.25]);
+    const b = pick(r, [22, 24, 26, 28, 30]);
+    const xs = [pick(r, [4, 6]), pick(r, [10, 12]), pick(r, [18, 20])];
+    const ys = xs.map((x) => m * x + b);
+    const L = pick(r, [24, 28]);
+    const ye = m * L + b;
+    if (ye < 0 || !ys.every(isHalf) || !isHalf(ye)) return null;
+    return lv({ x1: L + 4, y1: b + 4 }, {
+      segments: [{ id: 'a', x0: 0, x1: L, m: { min: -2.5, max: 1, step: 0.05, initial: 0 }, b: { min: 0, max: 40, step: 0.5, initial: 10 } }],
       joints: [],
-      objects: [{ kind: 'gate', id: 'g1', x: xa, y: ya, tol: 0.2 }, { kind: 'gate', id: 'g2', x: xb, y: yb, tol: 0.2 }],
-      finish: { x: L, y: ye, tol: 0.3, look: 'hut' },
-    }, 'עברו בשני השערים — שיפוע אחד, בדיוק.');
+      objects: [
+        { kind: 'gate', id: 'g1', x: xs[0], y: ys[0], tol: 0.2, hideLabel: true },
+        { kind: 'gate', id: 'g2', x: xs[2], y: ys[2], tol: 0.2, hideLabel: true },
+      ],
+      table: { xs, ys },
+      finish: { x: L, y: ye, tol: 30, look: 'powder', label: 'none' },
+    }, 'רק טבלה, בלי נקודות על הגרף: מצאו את קצב ההשתנות ואת גובה ההתחלה.');
   }
   if (world === 2) {
-    // Given drop A; your B has a fixed slope and must reach the hut, joining A inside the zone.
+    // The joint must land exactly on the bolt: substitute x of the bolt into the given line, then find b of yours.
     const mA = pick(r, [-1, -1.25, -1.5]);
-    const bA = pick(r, [24, 28, 30, 32]);
+    const bA = pick(r, [26, 28, 30, 32]);
     const mB = pick(r, [-0.25, -0.5]);
-    const xh = pick(r, [32, 36, 40, 44]);
-    const bB = -mB * xh;
-    const xj = (bB - bA) / (mA - mB);
-    if (!(xj > 4 && xj < xh - 8) || !isHalf(bB)) return null;
-    const z0 = Math.floor(xj) - 2, z1 = Math.floor(xj) + 2;
-    return lv({ x1: xh + 4, y1: bA + 4 }, {
+    const xj = pick(r, [8, 10, 12]);
+    const yj = mA * xj + bA;
+    const bB = yj - mB * xj;
+    const L = xj + pick(r, [16, 20, 24]);
+    const ye = mB * L + bB;
+    if (yj < 3 || ye < 0 || !isHalf(yj) || !isHalf(bB)) return null;
+    return lv({ x1: L + 4, y1: bA + 4 }, {
       segments: [
-        { id: 'a', name: 'הירידה הנתונה', x0: 0, x1: z1, m: { fixed: mA }, b: { fixed: bA }, given: true },
-        { id: 'b', name: 'אל הבקתה', x0: z0, x1: xh, m: { fixed: mB }, b: { min: -5, max: 40, step: 0.5, initial: 8 } },
+        { id: 'a', name: 'הירידה הנתונה', x0: 0, x1: xj + 1, m: { fixed: mA }, b: { fixed: bA }, given: true },
+        { id: 'b', name: 'הקטע שלכם', x0: xj - 1, x1: L, m: { fixed: mB }, b: { min: -10, max: 40, step: 0.5, initial: 8 } },
       ],
-      joints: [{ zone: [z0, z1] }],
+      joints: [{ zone: [xj - 0.2, xj + 0.2] }],
       objects: [],
-      finish: { x: xh, y: 0, tol: 0.25, look: 'hut' },
-    }, 'חברו קטע שני שיגיע לבקתה — והמפרק חייב ליפול באזור החיבור.');
+      finish: { x: L, y: ye, tol: 30, look: 'powder', label: 'none' },
+    }, 'הבורג מחכה בדיוק ב־x הזה: המפרק (נקודת החיתוך) חייב ליפול עליו.');
   }
   if (world === 3) {
     // Drop-in ramp to speed up, then your line y = m x + b0 above a rising ridge and below a cornice.
@@ -226,26 +230,31 @@ function buildExpert(world: 1 | 2 | 3 | 4, r: () => number): LevelSpec | null {
         { kind: 'constraint', id: 'ridge', side: 'above', m: mr, b: br, x0: 0, x1: L, look: 'ridge' },
         { kind: 'constraint', id: 'cornice', side: 'below', m: 0, b: c, x0: 0, x1: L, look: 'cornice' },
       ],
-      finish: { x: L, y: (mr * L + br + c) / 2, tol: (c - (mr * L + br)) / 2 + 0.01, look: 'powder' },
+      finish: { x: L, y: (mr * L + br + c) / 2, tol: 30, look: 'powder', label: 'none' },
     }, 'מעל הרכס העולה ומתחת לכרכוב לאורך כל הדרך.');
   }
-  // world 4: ghost line shown only as a graph; ride parallel to it, exactly one lane lower, through a gate.
+  // world 4: the ghost line is shown only as a graph; ride parallel to it, a stated number of meters lower.
   const mg = pick(r, [-0.25, -0.5, -0.75]);
   const bg = pick(r, [24, 26, 28]);
-  const gap = pick(r, [3, 4, 5]);
+  const gap = pick(r, [3, 4, 5, 6]);
   const L = pick(r, [24, 28, 32]);
-  const xg = pick(r, [8, 12, 16]);
+  const xg = pick(r, [4, 6, 8]);
+  const xg2 = L - pick(r, [2, 4]);
   const bYou = bg - gap;
   const yg = mg * xg + bYou;
+  const yg2 = mg * xg2 + bYou;
   const ye = mg * L + bYou;
-  if (ye < 0 || !isHalf(yg) || !isHalf(ye) || !isHalf(mg * 4 + bg)) return null;
+  if (ye < 0 || !isHalf(yg) || !isHalf(yg2) || !isHalf(mg * 4 + bg)) return null;
   return lv({ x1: L + 4, y1: bg + 4 }, {
     segments: [{ id: 'a', x0: 0, x1: L, m: { min: -2, max: 1, step: 0.05, initial: 0 }, b: { min: 0, max: 34, step: 0.5, initial: 10 } }],
     joints: [],
-    objects: [{ kind: 'gate', id: 'g', x: xg, y: yg, tol: 0.2 }],
+    objects: [
+      { kind: 'gate', id: 'g', x: xg, y: yg, tol: 0.2, hideLabel: true },
+      { kind: 'gate', id: 'g2', x: xg2, y: yg2, tol: 0.2, hideLabel: true },
+    ],
     rival: { who: 'ghost', m: mg, b: bg, x0: 0, x1: L, goal: 'parallel', graphOnly: true },
-    finish: { x: L, y: ye, tol: 0.3, look: 'hut' },
-  }, 'גלשו במקביל למסלול הרוח (קראו את הישר שלו מהגרף) ועברו בשער.');
+    finish: { x: L, y: ye, tol: 30, look: 'powder', label: 'none' },
+  }, `קראו את הישר של הרוח מהגרף, וגלשו במקביל אליו — בדיוק ${gap} מ׳ מתחתיו.`);
 }
 
 /** A verified expert run (no hints). Unique or very narrow solution; "always m = −1" fails. */

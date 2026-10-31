@@ -366,10 +366,17 @@ export class Course {
     pile.scale.set(1.6, 0.22, 1.1);
     pile.position.set(f.x + 3.8, f.y, 0.3);
     this.staticGroup.add(pile);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.08, 8, 32), new THREE.MeshBasicMaterial({ color: COLORS.gold }));
-    ring.position.set(f.x, f.y, GRID_Z + 0.06);
-    this.gridGroup.add(ring);
-    this.labels.set('c:finish', [f.x, f.y + 1.3, GRID_Z], `🏠 ${ltr(point(f.x, f.y))}`, 'lbl pt finish');
+    const lab = f.label ?? 'full';
+    if (lab === 'full') {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.08, 8, 32), new THREE.MeshBasicMaterial({ color: COLORS.gold }));
+      ring.position.set(f.x, f.y, GRID_Z + 0.06);
+      this.gridGroup.add(ring);
+      this.labels.set('c:finish', [f.x, f.y + 1.3, GRID_Z], `🏠 ${ltr(point(f.x, f.y))}`, 'lbl pt finish');
+    } else if (lab === 'x') {
+      this.labels.set('c:finish', [f.x, this.level.view.y0 + 1.2, GRID_Z], `🏠 ${ltr(`x = ${num(f.x)}`)}`, 'lbl pt finish');
+    } else {
+      this.labels.set('c:finish', [f.x, this.level.view.y0 + 1.2, GRID_Z], `❄ שדה אבקה`, 'lbl pt finish');
+    }
   }
 
   private buildRival(): void {
