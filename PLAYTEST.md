@@ -92,3 +92,43 @@ This run also caught a real UI bug. Level 16's b options were shown as a −/+ s
   - Real touch hardware.
   - Screen readers beyond aria-labels on the controls.
 - **Fun and learning:** not measured. They need classroom playtests.
+
+## Round 2: after the AAA polish pass (31 Oct 2026)
+
+A second independent playtester ran about 40 headless runs at 1280×800 and 390×844, playing every world, 8 practice and expert runs, and the bypass hunts. Notes and 93 screenshots are in `docs/playtest/ROUND2_NOTES.md` and `docs/playtest/round2/`. It found no blockers: everything played was won by computing, with no console errors. Its P1 findings and what changed:
+
+| Finding | Fix |
+|---|---|
+| Window levels (11, 14, practice and expert world 3): the labeled landing's tolerance equaled the window, so aiming at the landing won | Landings are wide unlabeled powder fields (❄ שדה אבקה); the inequalities alone decide. The tests still find exactly the authored windows. |
+| Expert was only harder in world 3 | Redesigned. **W1:** uneven table with no x = 0 row and hidden gates. **W2:** the intersection must land on a ±0.2 bolt (substitute, then solve). **W4:** the ghost line is shown only as a graph; ride a stated number of meters below it through two hidden gates. A test checks that expert runs label no answer point. |
+| Practice world 4 labeled the meeting point | Only the hut's x is shown, so you must plug it into the dog's equation. Runs are longer (16–24 m). |
+| On no-hint levels, the failure replay drew every line at full length (trial and error on the final) | On level 18 and expert runs, the replay draws your track only up to the failure point. |
+| Level 2's first miss gave Δy and Δx for free | The tip states the rule (Δy ÷ Δx, not the other way) without the level's numbers. |
+| Map flags covered each other (wrong level on click) | One terrace per world with evenly spaced flags. `scripts/map-overlaps.mjs` measures label rects: no flag/flag or sign/flag overlaps at 1024×768, 1280×800, 1440×900 and 1672×941. |
+| Phone: map didn't fit; expert unreachable | On phones the level list opens as the main view, one column, with ❄ תרגול and 🏔 מומחה per world (tested: the expert button opens an expert run). |
+| Level 18 said "only the summit descent remains!", with no ending | A summit finale card ("כבשתם את החרמון!") with fireworks and the star total. |
+| Star counter bidi ("54 / 15") | One isolated LTR span; order measured in the DOM. |
+| Build board visuals: flat fog discs, white plateau boxes, level 3 labels below the board, marker over tick labels | Soft sprite fog. The landing ledge exists only during the ride, and the hut stands on its own pillar beside the board. Level 3's grid starts at y = 0. The marker label sits below the ticks. |
+| Level 18 ride looked through a full-screen ice slab | Bridge and cornice slabs fade to 18 % in the chase camera. |
+| Title, build and celebration far from the mockups | **Title:** an attract mode where the level-1 run rides itself in a cinematic chase. **Daylight:** higher contrast, with blue bounce light and farther fog. **Board:** translucent glacier ice that shows the forest behind. **Celebration:** a closer camera. |
+| Dusk read as desert | Alpenglow palette: violet sky, cold blue snow, pink sunlit faces. |
+| Phone build HUD crowded | The level title moves into the goal line; axis labels step wider. |
+
+P2 fixes:
+- The −/+ steppers now run left to right like the slider.
+- Enter right after closing a lesson card no longer starts a ride (600 ms guard, and key repeat is ignored).
+- The inequality lesson uses a strict `<` example for the branch.
+- No empty stars appear on practice or expert runs.
+- The style chips are labeled.
+- The test hook's success text is cleaned up.
+
+Re-verified after the fixes, on the production build with key presses only:
+- All 18 levels ride to the hut with their verified answers.
+- Every deliberate wrong answer fails with a matching explanation. On window levels (13, 14), a one-step change can stay valid by design. On level 16 the scripted one-step change didn't apply to a choice segment.
+- 118 unit tests pass.
+
+**Still open:**
+- Level 16's first race can be brute-forced.
+- The kid rides seated, and the dog uses a sped-up walk cycle.
+- The worlds share one daytime palette except levels 10 (night) and 18 (dusk).
+- Fun and learning are not measured.
