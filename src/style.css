@@ -142,7 +142,7 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
 
 /* overlays */
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at center, rgba(10,25,60,0.12), rgba(5,12,32,0.5)); }
-.title-card { text-align: center; padding: 26px 34px; }
+.title-card { text-align: center; padding: 26px 34px; align-self: start; margin-top: 8vh; }
 .title-card h1 { font-size: clamp(44px, 9vw, 92px); margin: 0; line-height: 1; text-shadow: 0 5px 0 #b33f00, 0 0 30px #ff9a3c88; color: #fff; }
 .title-card h1 span { color: var(--orange); -webkit-text-stroke: 2px #fff; }
 .title-card p { font-size: clamp(16px, 2.4vw, 22px); margin: 12px auto 22px; max-width: 560px; text-shadow: 0 2px 6px #000a; }
@@ -288,3 +288,4 @@ input[type=range].slider { width: 100%; accent-color: var(--orange); margin: 6px
 }
 .cleared.finale { background: linear-gradient(135deg, #ffc93c, #ff7a1a 60%, #b56cff); border-color: #fff; font-size: 16px; color: #2a0f00; }
 .cleared.finale b { font-size: 22px; }
+.title-overlay { background: linear-gradient(to bottom, rgba(8, 22, 60, 0.55), rgba(8, 22, 60, 0.15) 38%, transparent 60%); }

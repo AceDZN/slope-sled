@@ -99,7 +99,7 @@ export class Course {
       this.gridMats.push(m);
       return new THREE.LineSegments(g, m);
     };
-    this.gridGroup.add(mk(minor, COLORS.grid, 0.22), mk(major, COLORS.grid, 0.55));
+    this.gridGroup.add(mk(minor, COLORS.grid, 0.3), mk(major, COLORS.grid, 0.75));
     // Axes, thicker via thin boxes.
     const axisMat = new THREE.MeshBasicMaterial({ color: 0xe9fbff, transparent: true, opacity: 0.95, depthWrite: false });
     axisMat.userData.base = 0.95;
@@ -134,8 +134,9 @@ export class Course {
     const tex = cliffFace().clone();
     tex.needsUpdate = true;
     tex.repeat.set(w / 40, 1);
-    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0.05, emissive: 0x0a1d44, emissiveIntensity: 0.55, transparent: true, opacity: 1 });
-    face.userData.base = 1;
+    // Translucent glacier ice: dark enough for the cyan grid to read, clear enough to see the mountain behind.
+    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.05, emissive: 0x0a2350, emissiveIntensity: 0.6, transparent: true, opacity: 0.9, depthWrite: false });
+    face.userData.base = 0.9;
     this.gridMats.push(face);
     const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 2.4), face);
     wall.position.set((left + right) / 2, (bottom + top) / 2, GRID_Z - 1.25);

@@ -273,15 +273,21 @@ export class Game {
   }
 
   setMode(m: Mode): void {
+    const wasTitle = this.mode === 'title';
     this.mode = m;
+    if (m === 'title') this.startAttract();
+    else if (wasTitle && this.attract) {
+      this.attract = null;
+      this.sim = null;
+    }
     this.sound.setIntensity(m === 'ride' || m === 'swoop' ? 1 : 0);
-    if (m === 'select' || m === 'title') this.refreshMap();
+    if (m === 'select') this.refreshMap();
     // Hero scale in the wide build/replay views so the kid and dog read like the mockups; true scale while riding.
-    const hero = m === 'build' || m === 'title' || m === 'select' ? 2 : 1;
+    const hero = m === 'build' || m === 'select' ? 2 : 1;
     this.rider?.root.scale.setScalar(hero);
     this.dog?.root.scale.setScalar(hero);
     if (this.course) {
-      this.course.rideScenery.visible = m === 'ride' || m === 'swoop' || (m === 'crash' && !!this.outcome?.ok);
+      this.course.rideScenery.visible = m === 'ride' || m === 'swoop' || m === 'title' || (m === 'crash' && !!this.outcome?.ok);
       this.course.setRideFade(m === 'ride' || m === 'swoop');
     }
     this.modeT = 0;
@@ -657,7 +663,9 @@ export class Game {
     this.modeT += dtReal;
     const dt = dtReal * this.timeScale;
     const cam = this.world.camera;
-    if (this.mode === 'select' || this.mode === 'title') {
+    if (this.mode === 'title') {
+      this.updateAttract(dtReal);
+    } else if (this.mode === 'select') {
       const pose = this.map.cameraPose(this.modeT);
       const k = this.modeT < 0.05 ? 1 : Math.min(1, dtReal * 3);
       cam.clearViewOffset();
@@ -715,9 +723,61 @@ export class Game {
     this.fx.update(dt);
     this.course.update(dtReal);
     this.world.update(dtReal);
-    this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.mode === 'select' || this.mode === 'title' ? this.map.cameraPose(0).look : this.viewCenter());
+    this.world.aimSun(this.mode === 'ride' || this.mode === 'swoop' ? this.rider.root.position : this.mode === 'select' ? this.map.cameraPose(0).look : this.mode === 'title' ? this.rider.root.position : this.viewCenter());
     if (this.mode !== 'ride' && this.mode !== 'swoop' && this.mode !== 'crash') this.labels.hidden = this.mode === 'title' || this.mode === 'select' || (this.mode === 'result' && !!this.outcome?.ok);
     this.labels.only = this.mode === 'select' && this.root.clientWidth > 760 ? ['map:'] : [];
+  }
+
+  // ---------------- title attract mode: the level-1 run rides itself behind the title ----------------
+  private attract: { sim: RideSim; t: number } | null = null;
+
+  private startAttract(): void {
+    if (!this.course) return;
+    const lv = levelById(1);
+    if (this.level.id !== 1) this.loadLevel(1, false);
+    const st = lv.stages[0];
+    const sim = new RideSim(st, [{ m: -0.5, b: 20 }]);
+    this.attract = { sim, t: 0 };
+    this.course.drawTrack(sim.judgement.track, { mode: 'ride', fullPreview: false, selected: -1 });
+    this.course.rideScenery.visible = true;
+    this.course.setGridOpacity(0);
+    this.rider.setPose('ride');
+    this.dog.setPose('run');
+  }
+
+  private updateAttract(dt: number): void {
+    const a = this.attract;
+    if (!a) return;
+    a.t += dt;
+    const sim = a.sim;
+    if (!sim.done) sim.advance(dt * 1000);
+    const s = sim.state;
+    this.placeRiderAt(s.x, s.y, s.angle, 0.2);
+    const d = this.dog.root.position;
+    d.x += (s.x - 1.2 - d.x) * Math.min(1, dt * 5);
+    d.y = trackY(sim.judgement.track, Math.max(sim.judgement.track.x0, d.x));
+    d.z = -1.25;
+    this.dog.root.rotation.set(0, 0, s.angle);
+    if (s.phase === 'ride') this.fx.spray(this.rider.root.position.clone().add(new THREE.Vector3(-0.6, 0.1, 0)), new THREE.Vector3(Math.cos(s.angle), Math.sin(s.angle), 0), s.v, dt, 0);
+    // Cinematic chase: behind and to the side of the sled, drifting slowly, always above the track.
+    const p = this.rider.root.position;
+    const tr = sim.judgement.track;
+    const side = 3.2 + Math.sin(a.t * 0.35) * 1.4;
+    const back = 5.8;
+    const cx = Math.max(tr.x0 - 6, p.x - back);
+    const cy = Math.max(p.y, trackY(tr, Math.max(tr.x0, cx))) + 2.4;
+    const cam = this.world.camera;
+    cam.clearViewOffset();
+    cam.fov = 52;
+    const want = new THREE.Vector3(cx, cy, side);
+    if (a.t < 0.05) cam.position.copy(want);
+    else cam.position.lerp(want, Math.min(1, dt * 4));
+    cam.lookAt(p.x + 8, p.y + 0.4, -0.6);
+    cam.updateProjectionMatrix();
+    if (sim.done) {
+      this.rider.setPose('cheer');
+      if (a.t > (sim.outcome?.time ?? 6) + 2.5) this.startAttract();
+    }
   }
 
   private updateCrash(dt: number, dtReal: number): void {
@@ -879,7 +939,7 @@ export class Game {
     const h = this.hud;
     this.els = {};
     if (this.mode === 'title') {
-      h.innerHTML = `<div class="overlay"><div class="title-card"><h1>מזחלת <span>השיפוע</span></h1>
+      h.innerHTML = `<div class="overlay title-overlay"><div class="title-card"><h1>מזחלת <span>השיפוע</span></h1>
         <p>בונים מסלול מזחלות על החרמון מקווים ישרים ${ltr('y = mx + b')} — ואז גולשים בו!</p>
         <button class="btn primary" data-a="play">שחקו</button><button class="btn secondary" data-a="select">בחירת שלב</button></div></div>`;
     } else if (this.mode === 'select') {

@@ -77,7 +77,7 @@ export class World {
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1400);
-    this.scene.fog = new THREE.Fog(COLORS.horizon, 180, 720);
+    this.scene.fog = new THREE.Fog(COLORS.horizon, 260, 900);
 
     this.snowMat = new THREE.MeshStandardMaterial({
       color: COLORS.snow,
@@ -267,12 +267,12 @@ export class World {
     } else {
       u.top.value.set(COLORS.skyTop); u.mid.value.set(COLORS.sky); u.bottom.value.set(COLORS.horizon); u.sunColor.value.set(0xfff3d6);
       u.sunDir.value.set(0.5, 0.6, 0.4).normalize();
-      this.hemi.intensity = 1.8; this.hemi.color.set(0xe4f0ff); this.hemi.groundColor.set(0x8aa6d8);
-      this.sun.intensity = 3.3; this.sun.color.set(0xfff1dc);
+      this.hemi.intensity = 1.35; this.hemi.color.set(0xcfe2ff); this.hemi.groundColor.set(0x6f8fd0);
+      this.sun.intensity = 4.2; this.sun.color.set(0xfff0d8);
       this.lantern.intensity = 0;
       (this.scene.fog as THREE.Fog).color.set(COLORS.horizon);
-      this.renderer.toneMappingExposure = 1.18;
-      if (this.grade) this.grade.uniforms.warmth.value = 0.04;
+      this.renderer.toneMappingExposure = 1.12;
+      if (this.grade) this.grade.uniforms.warmth.value = 0.05;
     }
     this.sunDir.copy(u.sunDir.value as THREE.Vector3);
   }
