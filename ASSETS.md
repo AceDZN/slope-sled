@@ -81,7 +81,7 @@ All models are Y-up, sit on y = 0, and are about 1 unit at their largest dimensi
   - `idle`: 15 s loop
   - `cheer`: 12 s
   - `fall`: 3 s, ends lying on the ground
-  - `sit`: 7 s, sits down and stays seated; use it for the riding pose by holding the end frames
+  - `sit`: 7 s, sits down and stays seated; held on its end frames for the seated wait at the start tower (the ride itself uses `idle` rotated belly-down with neck, head and arm offsets)
 - Tripo has no get-up preset.
 - Other presets that might be useful later, from the same list: `jump`, `defeat`, `surf`, `wave_goodbye_01`, `standing_relax`, `look_around`.
 - **Geometry:** 19,392 triangles. Bind pose is a T-pose.

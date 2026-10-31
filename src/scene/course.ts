@@ -49,6 +49,7 @@ export class Course {
   private trackGroup = new THREE.Group();
   private hintGroup = new THREE.Group();
   private markerGroup = new THREE.Group();
+  private prevGroup = new THREE.Group();
   readonly startTower = new THREE.Group();
   /** Scenery between the build camera and the grid: shown only during the ride. */
   readonly rideScenery = new THREE.Group();
@@ -63,13 +64,13 @@ export class Course {
   constructor(private labels: Labels, private assets: Assets) {
     this.snowMat.userData.shared = true;
     this.woodMat.userData.shared = true;
-    this.group.add(this.rideScenery, this.gridGroup, this.staticGroup, this.trackGroup, this.hintGroup, this.markerGroup, this.startTower);
+    this.group.add(this.rideScenery, this.gridGroup, this.staticGroup, this.trackGroup, this.hintGroup, this.markerGroup, this.prevGroup, this.startTower);
   }
 
   load(level: LevelSpec, stage: StageSpec): void {
     this.level = level;
     this.stage = stage;
-    for (const g of [this.gridGroup, this.staticGroup, this.trackGroup, this.hintGroup, this.markerGroup, this.rideScenery]) {
+    for (const g of [this.gridGroup, this.staticGroup, this.trackGroup, this.hintGroup, this.markerGroup, this.prevGroup, this.rideScenery]) {
       for (const c of [...g.children]) {
         g.remove(c);
         disposeTree(c);
@@ -766,6 +767,39 @@ export class Course {
     this.markerGroup.add(new THREE.Line(vg, new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.4, gapSize: 0.3 })));
     (this.markerGroup.children[this.markerGroup.children.length - 1] as THREE.Line).computeLineDistances();
     this.labels.set('c:mx', [x, y0 - 3.1, GRID_Z], ltr(`x = ${num(x)}`), 'lbl marker-x');
+  }
+
+  /**
+   * The last failed attempt, faint and dashed on the grid while you rebuild, with ✕ where it failed.
+   * Drawn only as far as the replay showed it (clipX on no-hint levels).
+   */
+  showPrevious(prev: { track: Track; clipX?: number; failX: number; failY: number } | null): void {
+    for (const c of [...this.prevGroup.children]) {
+      this.prevGroup.remove(c);
+      disposeTree(c);
+    }
+    this.labels.clear('c:prev');
+    if (!prev) return;
+    const mat = new THREE.MeshBasicMaterial({ color: 0xdfe8ff, transparent: true, opacity: 0.5, depthWrite: false });
+    const geo = new THREE.BoxGeometry(0.55, 0.12, 0.05);
+    for (const p of prev.track.pieces) {
+      const xa = p.xa;
+      const xb = prev.clipX !== undefined ? Math.min(p.xb, prev.clipX) : p.xb;
+      if (xb <= xa + 1e-6) continue;
+      const ang = Math.atan(p.line.m);
+      const len = (xb - xa) / Math.cos(ang);
+      const n = Math.max(1, Math.floor(len / 1.1));
+      for (let i = 0; i < n; i++) {
+        const x = xa + ((i + 0.5) / n) * (xb - xa);
+        const d = new THREE.Mesh(geo, mat);
+        d.position.set(x, yAt(p.line, x), GRID_Z + 0.1);
+        d.rotation.z = ang;
+        this.prevGroup.add(d);
+      }
+    }
+    // Tag under the ✕ (the start of the line is often under the fog sprites).
+    this.labels.set('c:prev', [prev.failX, prev.failY - 1.5, GRID_Z], 'הניסיון הקודם', 'lbl prev-tag');
+    this.labels.set('c:prevx', [prev.failX, prev.failY, GRID_Z], '✕', 'lbl prev-x');
   }
 
   clearMarker(): void {

@@ -356,13 +356,14 @@ export const LEVELS: LevelSpec[] = [
     stages: [
       {
         id: '16a',
-        brief: 'מרוץ 1: פגשו את הכלב בנקודה אחת בדיוק (כיף!).',
-        segments: [{ id: 'a', x0: 0, x1: 20, m: { choices: [-0.5, -0.75], initial: -0.5 }, b: { choices: [16, 20], initial: 16 } }],
+        brief: 'מרוץ 1: פגשו את הכלב בנקודה אחת בדיוק עד הסוף — בלי לחפור מתחת לשלג.',
+        segments: [{ id: 'a', x0: 0, x1: 20, m: mDial(-2, 0, -0.5), b: { fixed: 20 } }],
         joints: [],
         objects: [],
         rival: { who: 'dog', m: -0.5, b: 16, x0: 0, x1: 20, goal: 'cross' },
-        finish: { x: 20, y: 5, tol: 5, look: 'hut' },
-        hint: { text: 'כדי להיפגש בנקודה אחת, הקווים צריכים לרדת בקצב שונה.' },
+        // Any slope from −1 (powder at y = 0) to −0.7 (meets the dog right at x = 20) works.
+        finish: { x: 20, y: 3, tol: 3, look: 'powder', label: 'none' },
+        hint: { points: [[20, 6]], text: 'בסוף המסלול הכלב בגובה 6. כדי לחצות אותו, איפה אתם צריכים להיות שם?' },
       },
       {
         id: '16b',

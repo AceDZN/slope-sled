@@ -137,10 +137,7 @@ const SOLUTIONS: Record<string, number[][]> = {
   '13': range(39, 42, 0.5).map((b) => [b]),
   '14': range(-0.4, 0.05, 0.05).map((m) => [m]),
   '15': [[-1.25]],
-  '16a': [
-    [-0.75, 16],
-    [-0.75, 20],
-  ],
+  '16a': range(-1, -0.7, 0.05).map((m) => [m]),
   '16b': [[-0.75, 18]],
   '16c': [[-0.5, 18]],
 };
@@ -408,7 +405,7 @@ const WRONG: Wrong[] = [
   { stage: '15', what: 'm = −0.5 (copied the dog’s slope): parallel, no joint', params: [{ m: -0.5, b: 32 }, { m: -0.5, b: 20 }], expect: { hazard: 'gap', x: 16, reason: 'parallel' } },
   { stage: '15', what: 'm = −0.75 (12 ÷ 16, forgot the start height)', params: [{ m: -0.75, b: 32 }, { m: -0.5, b: 20 }], expect: { hazard: 'gate-high', id: 'meet', x: 16 } },
   { stage: '16a', what: 'parallel line: never meet', params: [{ m: -0.5, b: 20 }], expect: { hazard: 'never-met', x: 20 } },
-  { stage: '16a', what: 'same line: tangled', params: [{ m: -0.5, b: 16 }], expect: { hazard: 'tangled', x: 0 } },
+  { stage: '16a', what: 'too steep: digs under the snow before the end', params: [{ m: -1.25, b: 20 }], expect: { hazard: 'finish-low', x: 20 } },
   { stage: '16b', what: 'same line as the friend: tangled', params: [{ m: -0.75, b: 24 }], expect: { hazard: 'tangled', x: 0 } },
   { stage: '16b', what: 'other slope, same start: collide at the start', params: [{ m: -0.5, b: 24 }], expect: { hazard: 'collide', x: 0 } },
   { stage: '16b', what: 'other slope ("parallel meet far away"): collide at x = 24', params: [{ m: -0.5, b: 18 }], expect: { hazard: 'collide', x: 24 } },
@@ -500,8 +497,10 @@ test('all three system types appear: one (16a), none (16b), infinite (16c)', () 
   // Each race needs its own system type: a stage's winner fails the other two races' goals.
   const kinds = { '16a': 'one', '16b': 'none', '16c': 'infinite' } as const;
   for (const id of ['16a', '16b', '16c'] as const) {
-    for (const v of bruteForce(stageById(id))) {
-      const p = [{ m: v[0], b: v[1] }];
+    const st = stageById(id);
+    for (const v of bruteForce(st)) {
+      // Race 1 dials only m (b is the fixed start tower); races 2 and 3 pick both.
+      const p = st.segments[0].b.fixed !== undefined ? [{ m: v[0], b: st.segments[0].b.fixed }] : [{ m: v[0], b: v[1] }];
       assert.equal(judge(stageById(id), p).race?.kind, kinds[id]);
     }
   }

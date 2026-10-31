@@ -55,3 +55,16 @@ test('crossing a ghost you must ride with asks for the same line, not a parallel
   assert.match(e.text, /אותו ישר/);
   assert.doesNotMatch(e.text, /מקביל/);
 });
+
+test('level 16 race 1: a gentle slope crosses the dog too late; a steep one digs under the snow', () => {
+  const st = levelById(16).stages[0];
+  const late = simulateRide(st, [{ m: -0.65, b: 20 }]);
+  assert.equal(late.ok, false);
+  const e = explain(late, st, [{ m: -0.65, b: 20 }]);
+  assert.match(e.plain, /26\.67/);
+  assert.match(e.plain, /אחרי סוף המסלול/);
+  const parallel = explain(simulateRide(st, [{ m: -0.5, b: 20 }]), st, [{ m: -0.5, b: 20 }]);
+  assert.match(parallel.plain, /מקבילים/);
+  const steep = explain(simulateRide(st, [{ m: -1.25, b: 20 }]), st, [{ m: -1.25, b: 20 }]);
+  assert.match(steep.subtitle, /מתחת לשלג/);
+});

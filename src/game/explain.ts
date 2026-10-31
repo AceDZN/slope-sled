@@ -106,9 +106,15 @@ export function explain(outcome: RideOutcome, stage: StageSpec, params?: Array<{
         `שני הישרים נחתכים ב־${ltr(`x = ${num(j.solutionX ?? h.x, 2)}`)} — מחוץ לאזור החיבור ${zone}, אז שם אין גשר ביניהם.${stage.shapeGraph ? ' בדקו את סימן השיפוע של כל קטע: ירידה = שיפוע שלילי, מישור = 0, עלייה = חיובי.' : ' נקודת החיתוך היא הפתרון של מערכת שתי המשוואות.'}`);
     }
     case 'finish-high':
+      if (stage.finish.label === 'none' && stage.rival)
+        return mk('אופס!', 'עפתם מעל שדה האבקה', [['המסלול', you, 'bad']],
+          `ב־${x} המסלול שלכם עדיין בגובה ${ltr(num(h.trackY, 2))} — גבוה מדי כדי לנחות בשדה האבקה בסוף.`);
       return mk('אופס!', 'עפתם מעל הבקתה', [['המסלול', you, 'bad'], ['הבקתה', need, 'need']],
         `ב־${x} המסלול שלכם בגובה ${ltr(num(h.trackY, 2))}, והדלת של הבקתה בגובה ${ltr(num(h.needY, 2))}.`);
     case 'finish-low':
+      if (stage.finish.label === 'none' && stage.rival)
+        return mk('אופס!', 'חפרתם מתחת לשלג', [['המסלול', you, 'bad'], ['פני השלג', ltr('y = 0'), 'need']],
+          `ב־${x} המסלול שלכם בגובה ${ltr(num(h.trackY, 2))} — מתחת לפני השלג. השיפוע תלול מדי: נסו ירידה מתונה יותר.`);
       return mk('אופס!', 'נחתתם בשלג מתחת לבקתה', [['המסלול', you, 'bad'], ['הבקתה', need, 'need']],
         `ב־${x} המסלול שלכם בגובה ${ltr(num(h.trackY, 2))}, והדלת של הבקתה בגובה ${ltr(num(h.needY, 2))}.`);
     case 'collide': {
@@ -119,7 +125,15 @@ export function explain(outcome: RideOutcome, stage: StageSpec, params?: Array<{
           : `לישרים שיפועים שונים, ולכן למערכת יש פתרון יחיד — הם נחתכים ב־${ltr(`x = ${num(h.x, 2)}`)}. רצינו שלא תיפגשו: צריך ישר מקביל (אותו שיפוע, ${ltr('b')} שונה).`);
     }
     case 'never-met': {
-      const who = WHO[stage.rival?.who ?? 'rival'];
+      const rv = stage.rival;
+      const who = WHO[rv?.who ?? 'rival'];
+      const mine = params?.[h.seg] ?? params?.[0];
+      if (rv && mine && Math.abs(mine.m - rv.m) > 1e-9) {
+        // Different slopes always cross once, just not before the end of the course.
+        const xc = (rv.b - mine.b) / (mine.m - rv.m);
+        return mk('אוי…', `לא הספקתם לפגוש את ${who}`, [['נקודת החיתוך', ltr(`x = ${num(xc, 2)}`), 'bad'], ['סוף המסלול', ltr(`x = ${num(h.x)}`), 'need']],
+          `השיפועים שונים, אז הישרים נחתכים בנקודה אחת — אבל רק ב־${ltr(`x = ${num(xc, 2)}`)}, אחרי סוף המסלול. ב־${ltr(`x = ${num(h.x)}`)} אתם עדיין בגובה ${ltr(num(h.trackY, 2))} ו${who} בגובה ${ltr(num(h.needY, 2))}.`);
+      }
       return mk('אוי…', `לא נפגשתם עם ${who}`, [],
         `לשני הישרים אותו שיפוע ואיבר חופשי שונה — ישרים מקבילים לא נפגשים אף פעם. למערכת אין פתרון.`);
     }

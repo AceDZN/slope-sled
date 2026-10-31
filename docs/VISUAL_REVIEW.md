@@ -106,8 +106,14 @@ The captures in `docs/visual-review/` were re-taken on the production build at 1
 - **Level map:**
   - Difficulty colors on each flag and a legend.
   - World signs beside their trail, carrying ❄ תרגול (practice) and 🏔 מומחה (expert) once unlocked.
-- **Remaining deviations:**
-  - The kid rides seated, not prone.
-  - The dog runs with a sped-up walk.
-  - There's no motion-blur post effect.
-  - The trail map's summit flags still crowd together a little.
+- **Remaining deviations:** see the third pass below.
+
+## Third pass, 31 Oct 2026
+
+- **Backdrop above the grid:** in build view the terrain behind the course used to rise into a flat white haze that filled the top of the frame. The valley floor now stays low behind the course, so the blue sky and the Hermon range show above the grid, as in mockups 01 and 02. A band of instanced, snow-tipped pine forests (about 1,400 trees, one draw call) sits on the valley floor for depth.
+- **Belly-down rider:** the kid now rides prone and head-first, as in mockup 03. The idle clip is rotated onto the sled, with bone offsets for the neck and head (looking down the track) and the arms (tucked along the body). They still sit on the sled at the start tower and stand up to cheer.
+- **Wipeout:** the fling used to be overwritten every frame by the seated placement, so the kid never left the sled. They now fly off in a world-space arc, tumble, land on their back in the snow with a puff and a small shake, and stay there for the replay.
+- **Dog:** the walk clip now has a bounding gallop layered on top (body bob and pitch, faster with speed).
+- **Previous attempt:** after a wipeout, the rebuild view shows the last track faint and dashed, with a ✕ where it failed and the tag "הניסיון הקודם". On no-hint levels it stops where the failure replay stopped.
+- **Long goal lines:** when a race brief wraps to three lines, the segment panel moves down below it instead of covering it.
+- **Remaining deviations:** the dog is still a walk cycle underneath, with no tail or ear motion; there's no motion blur; the summit flags on the map crowd together a little.

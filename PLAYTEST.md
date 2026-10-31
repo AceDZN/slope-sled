@@ -129,6 +129,6 @@ Re-verified after the fixes, on the production build with key presses only:
 
 **Still open:**
 - Level 16's first race can be brute-forced.
-- The kid rides seated, and the dog uses a sped-up walk cycle.
+- The kid rides seated, and the dog uses a sped-up walk cycle. (Third pass: the kid now rides prone and the dog has a gallop bounce on top of the walk.)
 - The worlds share one daytime palette except levels 10 (night) and 18 (dusk).
 - Fun and learning are not measured.

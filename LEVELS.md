@@ -127,15 +127,15 @@ Conventions:
 
 ### 16. נפגשים, לעולם לא, או תמיד — Meet, never, or always (three races)
 
-Each race shows the rival's equation and offers two slopes and two free terms (four lines: one per system type).
+Each race shows the rival's equation. Race 1 is a slope dial; races 2 and 3 offer two slopes and two free terms (four lines: one per system type).
 
 | Race | Rival | Choices | Goal | Solution set | Wrong |
 |---|---|---|---|---|---|
-| 1 | dog y = −0.5x + 16 on [0, 20] | m ∈ {−0.5, −0.75}, b ∈ {16, 20} | meet once | **(−0.75, 16)** meets at (0, 16), **(−0.75, 20)** at (16, 8) — any different slope | (−0.5, 20) parallel → `never-met` at x = 20; (−0.5, 16) same line → `tangled` at x = 0 |
+| 1 | dog y = −0.5x + 16 on [0, 20] | m dial −2…0 (step 0.05), b fixed at the start tower 20; unlabeled powder landing y ∈ [0, 6] at x = 20 | meet exactly once before the end, without digging under the snow | **m ∈ [−1, −0.7]** (7 of 41 dial values): start above the dog, end at or below its height 6 at x = 20 (20 + 20m ≤ 6) and not below y = 0 | −0.5 (the start value) parallel → `never-met`; −0.65 → crosses only at x ≈ 26.7, after the end → `never-met` with the late crossing named; −1.25 → `finish-low` (under the snow) |
 | 2 | friend y = −0.75x + 24 on [0, 24] | m ∈ {−0.5, −0.75}, b ∈ {24, 18} | never meet | **(−0.75, 18)** — same slope, other free term | same line → `tangled`; (−0.5, 24) → `collide` at x = 0; (−0.5, 18) → `collide` at x = 24 ("parallel-looking lines meet far away") |
 | 3 | ghost y = −0.5x + 18 on [0, 24] | m ∈ {−0.25, −0.5}, b ∈ {14, 18} | always together | **(−0.5, 18)** — the same line | (−0.5, 14) → `not-tandem` at x = 24; (−0.25, 14) → `collide` at x = 16; (−0.25, 18) → `collide` at x = 0 |
 
-Ride times **3.81 s / 4.28 s / 4.54 s**. The finish tolerance is wide on purpose (the race goal decides). The tests check that every race-1 winner is a one-solution system, the race-2 winner a no-solution system and the race-3 winner infinitely many.
+Ride times **3.81 s / 4.28 s / 4.54 s**. Races 2 and 3 have a wide finish on purpose (the race goal decides). Race 1 used to be two-by-two buttons with two of the four combinations winning, so a coin flip passed it; the dial makes it a real inequality on the slope. The tests check that every race-1 winner is a one-solution system, the race-2 winner a no-solution system and the race-3 winner infinitely many.
 
 ### 17. ציירו את הגלישה — Draw the ride
 

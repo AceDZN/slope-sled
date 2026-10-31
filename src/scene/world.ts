@@ -5,6 +5,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { fbm, snowBump, cloudPuff } from './textures.ts';
 
 export const COLORS = {
@@ -173,7 +174,8 @@ export class World {
   static terrainY(x: number, z: number): number {
     const away = Math.min(1, Math.max(0, Math.abs(z) - 12) / 40);
     const hills = (fbm(x * 0.012 + 3, z * 0.012 + 7, 4) - 0.45) * 26;
-    const rise = z < -40 ? Math.pow((-z - 40) / 140, 1.6) * 70 : 0;
+    // The valley floor stays low far behind the course so the build camera sees sky and the Hermon range above the grid.
+    const rise = z < -110 ? Math.pow((-z - 110) / 200, 1.5) * 40 : 0;
     const dip = z > 30 ? -Math.min(8, (z - 30) * 0.12) : 0;
     return Math.max(-6, hills * away + rise + dip) - 0.06;
   }
@@ -230,6 +232,8 @@ export class World {
       this.backdrop.add(m);
     });
 
+    this.distantForest();
+
     // Clouds drifting high above.
     const tex = cloudPuff();
     for (let i = 0; i < 12; i++) {
@@ -238,6 +242,59 @@ export class World {
       s.scale.set(140 + Math.random() * 80, 50 + Math.random() * 30, 1);
       this.clouds.push(s);
       this.backdrop.add(s);
+    }
+  }
+
+  /** Clumps of low-poly pines on the valley floor behind the course: depth and scale above and through the grid. */
+  private distantForest(): void {
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const spots: Array<[number, number, number]> = [];
+    for (let i = 0; i < 4000 && spots.length < 1400; i++) {
+      const x = -220 + rnd() * 480;
+      const z = -120 - rnd() * 200;
+      // Clumped: keep a spot only where the forest noise is dense, thinner far away.
+      if (fbm(x * 0.02 + 40, z * 0.02 - 13, 3) < 0.48 + (-z - 120) / 1000) continue;
+      spots.push([x, z, 6 + rnd() * 7]);
+    }
+    // One merged, vertex-colored tree: a trunk and three stacked tiers, each tier tipped with snow.
+    const pieces: THREE.BufferGeometry[] = [];
+    const paint = (g: THREE.BufferGeometry, fn: (y: number) => THREE.Color) => {
+      const p = g.attributes.position as THREE.BufferAttribute;
+      const c = new Float32Array(p.count * 3);
+      for (let i = 0; i < p.count; i++) {
+        const col = fn(p.getY(i));
+        c[i * 3] = col.r; c[i * 3 + 1] = col.g; c[i * 3 + 2] = col.b;
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+      return g.toNonIndexed();
+    };
+    const trunk = new THREE.CylinderGeometry(0.05, 0.08, 0.2, 5);
+    trunk.translate(0, 0.1, 0);
+    pieces.push(paint(trunk, () => new THREE.Color(0x5a3c26)));
+    const green = new THREE.Color(0x2d5a50), snow = new THREE.Color(0xf2f7ff);
+    [[0.5, 0.15, 0.5], [0.38, 0.38, 0.42], [0.25, 0.6, 0.38]].forEach(([r, y0, h]) => {
+      const cone = new THREE.ConeGeometry(r, h, 8, 2, true);
+      cone.translate(0, y0 + h / 2, 0);
+      pieces.push(paint(cone, (y) => (y > y0 + h * 0.62 ? snow : green.clone().lerp(snow, Math.max(0, (y - y0) / h - 0.3) * 0.5))));
+    });
+    const tree = mergeGeometries(pieces)!;
+    tree.computeVertexNormals();
+    const parts: Array<[THREE.BufferGeometry, THREE.Material]> = [
+      [tree, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true, side: THREE.DoubleSide })],
+    ];
+    const m4 = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    for (const [geo, mat] of parts) {
+      const inst = new THREE.InstancedMesh(geo, mat, spots.length);
+      spots.forEach(([x, z, h], i) => {
+        q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (x * 13.7 + z) % 6.28);
+        m4.compose(new THREE.Vector3(x, World.terrainY(x, z) - 0.3, z), q, new THREE.Vector3(h * 0.7, h, h * 0.7));
+        inst.setMatrixAt(i, m4);
+      });
+      inst.castShadow = false;
+      inst.receiveShadow = true;
+      this.backdrop.add(inst);
     }
   }
 

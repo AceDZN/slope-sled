@@ -63,6 +63,18 @@
   - Alpenglow dusk and a time of day per world.
 - **QA:** re-run on the production build. All 18 levels pass, and every wrong answer fails with a matching explanation (apart from the window levels, by design).
 
+## Third pass (31 Oct 2026)
+
+- **Level 16, race 1:** it was two-by-two buttons, and two of the four combinations won, so a coin flip passed. It's now a slope dial (b fixed at the start tower). You have to start above the dog and finish at or below its height at x = 20 without going under the snow: m ∈ [−1, −0.7]. A gentle slope that crosses the dog only after the end now gets its own explanation, naming where the lines cross.
+- **Retry ghost:** after a wipeout, the last track stays on the grid, faint and dashed, with ✕ at the failure point.
+- **Look:**
+  - Sky and the Hermon range are now visible above the grid.
+  - A distant instanced forest.
+  - The kid rides prone and head-first.
+  - The wipeout flings the kid into the snow (before this it was silently overwritten every frame).
+  - The dog gallops.
+  - The panel moves below long goal lines.
+
 ## Verification environment notes
 
 - The in-app browser pane isn't visible while this session has no window, so `requestAnimationFrame` doesn't run and pane screenshots are stale. All gameplay captures come from headless Chromium via Playwright (`scripts/drive.mjs`, `scripts/play-all.mjs`), using real clicks and keys plus `advanceTime`.
@@ -70,4 +82,4 @@
 
 ## Open / next
 
-- The dog has no real run cycle (it uses a sped-up walk).
+- The dog has no real run cycle (a walk clip with a procedural gallop bounce on top).

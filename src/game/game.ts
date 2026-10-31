@@ -84,6 +84,9 @@ export class Game {
   private camLook = new THREE.Vector3();
   private camPos = new THREE.Vector3();
   private shake = 0;
+  private kidLanded = false;
+  /** Last failed attempt of this stage, shown faintly while rebuilding. */
+  private lastTry: { track: Track; clipX?: number; failX: number; failY: number } | null = null;
   private timeScale = 1;
   // ride input & style
   tuck = false;
@@ -209,6 +212,10 @@ export class Game {
     this.hintOn = false;
     this.world.setMood(this.level.mood ?? 'day', this.level.world);
     this.course.load(this.level, st);
+    this.lastTry = null;
+    this.rider.flung = false;
+    this.rider.body.rotation.set(0, 0, 0);
+    this.rider.kidHolder.rotation.set(0, 0, 0);
     this.setupRival();
     this.redrawBuild();
   }
@@ -377,8 +384,10 @@ export class Game {
     this.finishFx = false;
     this.passedGates.clear();
     this.timeScale = 1;
+    this.rider.flung = false;
     this.course.showHint(false);
     this.course.clearMarker();
+    this.course.showPrevious(null);
     this.course.drawTrack(this.sim.judgement.track, { mode: 'ride', fullPreview: false, selected: -1 });
     this.spawnFlakes(this.sim.judgement.track);
     this.swoopFrom.pos.copy(this.world.camera.position);
@@ -574,6 +583,8 @@ export class Game {
       const s = this.sim!.state;
       this.crashVel.set(Math.max(2, s.v * 0.6), 4 + s.v * 0.25, (Math.random() - 0.5) * 2);
       if (o.reason === 'hazard') {
+        this.rider.flung = true;
+        this.kidLanded = false;
         this.sound.crash();
         this.fx.burst(this.crashAt, 1);
         this.shake = 0.6;
@@ -590,9 +601,11 @@ export class Game {
         this.course.drawTrack(tr, { mode: 'replay', fullPreview: false, selected: -1, badSeg: h.seg, clipX: this.level.noHints ? h.x : undefined });
         const w = h.worst ?? { x: h.x, trackY: h.trackY, needY: h.needY };
         this.course.showMarker(w.x, w.trackY, ['never-met', 'not-tandem', 'tangled'].includes(h.kind) ? null : w.needY);
+        this.lastTry = { track: tr, clipX: this.level.noHints ? h.x : undefined, failX: w.x, failY: w.trackY };
       } else {
         this.course.drawTrack(tr, { mode: 'replay', fullPreview: false, selected: -1, badSeg: o.seg, clipX: this.level.noHints ? o.x : undefined });
         this.course.showMarker(o.x, o.y, null);
+        this.lastTry = { track: tr, clipX: this.level.noHints ? o.x : undefined, failX: o.x, failY: o.y };
       }
       this.setMode('crash');
     }
@@ -622,10 +635,12 @@ export class Game {
     this.sim = null;
     this.course.clearMarker();
     this.rider.body.rotation.set(0, 0, 0);
+    this.rider.flung = false;
     this.rider.kidHolder.rotation.set(0, 0, 0);
     for (const f of this.flakeMeshes) this.world.scene.remove(f);
     this.flakeMeshes = [];
     this.redrawBuild();
+    this.course.showPrevious(this.lastTry);
     this.setMode('build');
   }
 
@@ -811,11 +826,36 @@ export class Game {
       const s = sim.state;
       this.placeRiderAt(s.x, s.y, s.angle, this.leanZ);
     } else {
-      const t = Math.min(this.modeT * this.timeScale, 1.6);
-      const kid = this.rider.kidHolder;
-      kid.position.set(this.crashVel.x * t, this.crashVel.y * t - 4.2 * t * t + 0.2, this.crashVel.z * t + (this.rider.usingTripo ? 0 : 0));
-      kid.rotation.set(t * 3, 0, -t * 5);
+      // The kid flies off in a ballistic arc (world space), tumbles, and lands on their back in the snow.
+      const t = Math.min(this.crashT, 2.4);
+      const c = this.crashAt, v = this.crashVel, G = 9.8;
+      const tr = sim.judgement.track;
+      const ground = (x: number) => trackY(tr, Math.min(tr.x1, Math.max(tr.x0, x))) + 0.2;
+      const yAtT = (u: number) => c.y + 0.5 + v.y * u - (G / 2) * u * u;
+      let tLand = 2.4;
+      for (let u = 0.05; u <= 2.4; u += 0.02) {
+        if (yAtT(u) < ground(c.x + v.x * u)) {
+          tLand = u;
+          break;
+        }
+      }
+      const tt = Math.min(t, tLand);
+      const wx = c.x + v.x * tt;
+      const want = new THREE.Vector3(wx, Math.max(ground(wx), yAtT(tt)), c.z + v.z * tt);
+      const tumble = new THREE.Quaternion().setFromEuler(new THREE.Euler(tt * 3, 0, -Math.PI / 2 - tt * 5));
+      const lying = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.4, Math.PI / 2));
+      const q = t > tLand ? tumble.slerp(lying, Math.min(1, (t - tLand) * 5)) : tumble;
       this.rider.body.rotation.z = Math.min(1, t) * 2.4;
+      this.rider.root.updateMatrixWorld(true);
+      const kid = this.rider.kidHolder;
+      kid.position.copy(this.rider.body.worldToLocal(want));
+      kid.quaternion.copy(this.rider.body.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(q));
+      if (t > tLand && !this.kidLanded) {
+        this.kidLanded = true;
+        this.fx.burst(want.clone(), 0.5);
+        this.sound.land();
+        this.shake = Math.max(this.shake, 0.25);
+      }
     }
     if (this.modeT > 0.5) this.timeScale = Math.min(1, this.timeScale + dtReal * 0.8);
     const k = Math.min(1, this.modeT / 1.2);
@@ -958,7 +998,17 @@ export class Game {
     }
     if (this.paused) h.insertAdjacentHTML('beforeend', this.pauseHtml());
     h.querySelectorAll<HTMLElement>('[data-el]').forEach((e) => (this.els[e.dataset.el!] = e));
-    if (this.mode === 'build') this.updateCards();
+    if (this.mode === 'build') {
+      this.updateCards();
+      // Long goal lines (race briefs) wrap to three rows: push the side panel below them.
+      const goal = h.querySelector<HTMLElement>('.goal');
+      const panel = this.els.panel;
+      if (goal && panel && !window.matchMedia('(max-width: 760px)').matches) {
+        const top = Math.max(132, goal.offsetTop + goal.offsetHeight + 10);
+        panel.style.top = `${top}px`;
+        panel.style.maxHeight = `calc(100% - ${top + 14}px)`;
+      }
+    }
   }
 
   private buildHtml(): string {
@@ -1428,6 +1478,7 @@ export class Game {
     return JSON.stringify({
       coords: 'x = horizontal distance (m, grows left→right), y = altitude (m)',
       mode: this.mode,
+      previousAttempt: this.lastTry && this.mode === 'build' ? { failX: Number(this.lastTry.failX.toFixed(2)) } : null,
       paused: this.paused,
       lesson: this.lesson,
       difficulty: this.level ? this.difficulty : null,

@@ -10,10 +10,11 @@ It's a snow day on Mount Hermon. You build a sled run out of straight lines `y =
 - **Progression:** four worlds, one subject each (slope → free term and equation of a line → inequalities → systems and graph reading). Every level is tagged קל / בינוני / מאתגר / העברה / גמר, and each world ends with a transfer level; level 18 is a no-hint final.
 - **Lesson cards:** the first time a concept appears (slope, rise ÷ run, parallel lines, b, two points, joints = intersections, inequalities, meeting points, number of solutions, reading graphs), an illustrated card explains it in Workbook's terms and links the module. 📖 reopens it.
 - **Replay and beyond:** any unlocked level can be replayed from the 3D trail map. Stars and the best style score are kept. Once a world's transfer level is cleared, its wooden sign offers **❄ תרגול**, fresh solver-checked runs at the same difficulty, and **🏔 מומחה**, harder runs with no hints: two gates on one slope, a joint plus the hut, a rising ridge under a cornice, and riding parallel to a line read only from its graph.
+- **Retry:** after a wipeout, your last track stays on the grid, faint and dashed, with ✕ where it failed, so you can see what to change.
 - **Ride:** a groomed run with snow berms, a kicker at the hut, tricks in the air (↑ / טריק), snowflakes to collect by leaning, and a style score with a personal best per level. Procedural music gets busier while you ride.
 - **Look:** a cut-away ice cliff under the coordinate grid, noise-generated snowy terrain, a snow-capped Hermon range, clouds, bloom and a color grade. If frames get slow, it drops to plain rendering automatically.
 
-**Implemented:** everything above. **Not implemented / planned:** a real dog run cycle (Tripo offered only walk for the quadruped rig), a belly-down riding pose, and classroom playtests. See [PLAYTEST.md](PLAYTEST.md).
+**Implemented:** everything above, including a belly-down riding pose and a gallop bounce layered on the dog's walk. **Not implemented / planned:** a true dog run cycle (Tripo offered only walk for the quadruped rig) and classroom playtests. See [PLAYTEST.md](PLAYTEST.md).
 
 ## Run
 

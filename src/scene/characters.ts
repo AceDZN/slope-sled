@@ -66,7 +66,17 @@ export class Rider {
   pose: RiderPose = 'idle';
   private t = 0;
   private sitBones: Array<{ bone: THREE.Bone; rot: THREE.Euler }> = [];
+  private bones = new Map<string, THREE.Bone>();
+  /** Set by the wipeout: the game moves the kid off the sled, so update() leaves the holder alone. */
+  flung = false;
   readonly usingTripo: boolean;
+  /** Belly-down, head-first riding pose: bone offsets (radians) layered over the idle clip. */
+  static PRONE = {
+    neck: [0.45, 0, 0], head: [0.75, 0, 0],
+    armL: [-1.3, 0, 0], armR: [-1.3, 0, 0], foreL: [0, 0, 0], foreR: [0, 0, 0],
+    spine: [-0.08, 0, 0],
+    pos: [-0.82, 0.58, 0],
+  };
 
   constructor(assets: Assets) {
     this.root.add(this.body);
@@ -87,6 +97,9 @@ export class Rider {
         wave: ['wave', 'greet'],
       });
       this.findSitBones(c);
+      c.traverse((o) => {
+        if ((o as THREE.Bone).isBone) this.bones.set(o.name.replace(/^mixamorig:?/i, ''), o as THREE.Bone);
+      });
     } else {
       this.kid = this.proceduralKid();
       this.anim = new Animator(this.kid, [], {});
@@ -144,7 +157,35 @@ export class Rider {
     this.pose = p;
     if (p === 'cheer') this.anim.play('cheer', false) || this.anim.play('idle');
     else if (p === 'fall') this.anim.play('fall', true) || this.anim.play('idle');
+    else if (this.proneOk && (p === 'ride' || p === 'tuck')) this.anim.play('idle', false, 0.2);
     else this.anim.has('sit') ? this.anim.play('sit', false, 0.2, true) : this.anim.play('idle');
+  }
+
+  /** The rig has the bones the prone pose needs. */
+  private get proneOk(): boolean {
+    return this.usingTripo && this.bones.has('Head') && this.bones.has('LeftArm') && this.anim.has('idle');
+  }
+
+  private get prone(): boolean {
+    return this.proneOk && (this.pose === 'ride' || this.pose === 'tuck');
+  }
+
+  private applyProne(): void {
+    const P = Rider.PRONE;
+    const add = (name: string, r: number[]) => {
+      const b = this.bones.get(name);
+      if (!b) return;
+      b.rotation.x += r[0];
+      b.rotation.y += r[1];
+      b.rotation.z += r[2];
+    };
+    add('Neck', P.neck);
+    add('Head', P.head);
+    add('Spine1', P.spine);
+    add('LeftArm', P.armL);
+    add('RightArm', P.armR);
+    add('LeftForeArm', P.foreL);
+    add('RightForeArm', P.foreR);
   }
 
   /** Is the kid seated (bones overridden after the mixer)? */
@@ -163,10 +204,18 @@ export class Rider {
     }
     // Seat height: a seated kid sits on the deck; standing clips stand next to the sled.
     const tuck = this.pose === 'tuck' ? 1 : 0;
-    if (this.usingTripo) {
+    if (this.usingTripo && this.flung) {
+      // The game drives the kid's flight off the sled.
+    } else if (this.prone) {
+      // Belly-down, head first: the standing figure rotated so its head points down the track (+x), face down.
+      this.applyProne();
+      const P = Rider.PRONE.pos;
+      this.kidHolder.position.set(P[0], P[1] - tuck * 0.04, P[2]);
+      this.kidHolder.rotation.set(0, 0, -Math.PI / 2 + tuck * 0.04);
+    } else if (this.usingTripo) {
       const standing = this.pose === 'cheer' || this.pose === 'fall';
       this.kidHolder.position.set(standing ? -0.2 : -0.15, standing ? 0 : -0.25, standing ? 1.1 : 0);
-      this.kidHolder.rotation.z = -tuck * 0.35;
+      this.kidHolder.rotation.set(0, 0, -tuck * 0.35);
     } else if (this.procedural) {
       const pr = this.procedural;
       pr.torso.rotation.z = -tuck * 0.6 + (this.pose === 'cheer' ? 0.2 : 0);
@@ -185,6 +234,7 @@ export class Dog {
   private anim: Animator;
   private legs: THREE.Object3D[] = [];
   private t = 0;
+  private gallop = 0;
   pose: DogPose = 'idle';
   private still = false;
   readonly usingTripo: boolean;
@@ -256,7 +306,14 @@ export class Dog {
   update(dt: number, speed: number): void {
     this.t += dt;
     this.anim.update(this.still ? 0 : dt * (this.pose === 'run' || this.pose === 'jump' ? Math.min(2.4, 1.2 + speed / 10) : 1));
-    if (!this.usingTripo) {
+    if (this.usingTripo) {
+      // The rig only has a walk: add a bounding gallop on top (body bob and pitch), faster with speed.
+      const run = this.pose === 'run' || this.pose === 'jump' ? 1 : 0;
+      this.gallop += dt * (9 + Math.min(10, speed) * 0.6) * run;
+      const ph = this.gallop;
+      this.model.position.y = run * Math.abs(Math.sin(ph)) * 0.13;
+      this.model.rotation.z = run * Math.sin(ph + 0.6) * 0.14;
+    } else {
       const k = this.pose === 'run' ? 1 : 0;
       this.legs.forEach((l, i) => (l.rotation.z = Math.sin(this.t * 16 + (i % 2) * Math.PI + (i > 1 ? 1.2 : 0)) * 0.7 * k));
       this.model.position.y = this.pose === 'run' ? Math.abs(Math.sin(this.t * 16)) * 0.08 : 0;
