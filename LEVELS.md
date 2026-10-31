@@ -89,7 +89,7 @@ Conventions:
 
 ### 11. מעל הסלעים, מתחת לענף — Above the rocks, under the branch
 
-- Given: track y = −0.5x + b on [0, 16] with a kicker; rocks top out at y = 4 over [0, 16] (track y ≥ 4); a branch hangs at y = 14.5 over x ∈ [0, 2] (track y < 14.5, strict). Landing powder (16, 5) ± 1. b stepper 0…24.
+- Given: track y = −0.5x + b on [0, 16] with a kicker; rocks top out at y = 4 over [0, 16] (track y ≥ 4); a branch hangs at y = 14.5 over x ∈ [0, 2] (track y < 14.5, strict). Landing: a wide, unlabeled powder field (center (16, 5) ± 9), so only the two inequalities decide; an earlier ±1 labeled landing let players aim the line at it instead of reasoning. b stepper 0…24.
 - Math: at x = 16, −8 + b ≥ 4 → b ≥ 12; at x = 0, b < 14.5 → b ≤ 14 on the 0.5 grid.
 - Solution set: **b ∈ {12, 12.5, 13, 13.5, 14}** — all ride. Ride **3.83 s** (b = 13), 0.3 s of air.
 - Wrong: b = 11.5 → `rocks` at x = 15. b = 14.5 → touches the branch → `branch` at x = 0. b = 4 (rock height as b) → `rocks` at x = 0.
@@ -110,7 +110,7 @@ Conventions:
 
 ### 14. העברה: הכרכוב — Transfer: the cornice
 
-- Given: a drawn drop-in ramp y = −x + 18 on [−8, 0] (gives you speed); your line y = mx + 18 on [0, 24] with a kicker; stay above the rock ridge y ≥ 0.25x + 2 and below the cornice y ≤ 20 over [0, 24]. Landing powder (24, 14) ± 6. m dial −1.5…1 (starts at 0.5).
+- Given: a drawn drop-in ramp y = −x + 18 on [−8, 0] (gives you speed); your line y = mx + 18 on [0, 24] with a kicker; stay above the rock ridge y ≥ 0.25x + 2 and below the cornice y ≤ 20 over [0, 24]. Landing: a wide, unlabeled powder field (center (24, 14) ± 14), so the ridge and cornice decide; the earlier labeled ±6 landing matched the window exactly. m dial −1.5…1 (starts at 0.5).
 - Math: at x = 24: 24m + 18 ≥ 8 → m ≥ −5/12; 24m + 18 ≤ 20 → m ≤ 1/12.
 - Solution set: **m ∈ {−0.40, −0.35, …, 0.05}** (10 values) — all ride. Ride **5.62 s** (m = −0.2), 5.26–7.38 s across the set.
 - Wrong: m = −0.45 → `rocks` (ridge) at x ≈ 22.9. m = 0.1 → `branch` (cornice) at x = 20. m = −0.5 → `rocks`. m = 0.5 (initial) → `branch` at x = 4.
@@ -168,3 +168,14 @@ Every handoff number rides as written, except where a number was left open (list
 - Level 14: a drawn drop-in ramp on x ∈ [−8, 0] gives the speed needed to cross 24 m at m ≥ 0 (the view starts at x = −8).
 - Level 8 is 3.0 s, below the ~4 s target; both its coordinates are fixed by the handoff.
 - `judge.ts`: a given segment that only *touches* the rival's line at one end point (level 15, riding on with the dog from x = 16) no longer counts as "same line / tangled"; parallel lines there now report the gap at the joint.
+
+## Generated runs (practice and expert)
+
+Both come from `src/math/generate.ts`. The tests in `tests/generate.test.ts` check, for each world, that every run can be solved through the real ride, that its solution set is narrow (1–5 values), that "always m = −1" fails, and that expert runs label no answer point (hidden gates, unlabeled powder landing).
+
+| World | Practice (❄ תרגול, hints allowed) | Expert (🏔 מומחה, no hints) |
+|---|---|---|
+| 1 | Fixed start, one labeled gate on the line: slope from two points | Uneven table with no x = 0 row and hidden gates: find m and b from the table |
+| 2 | Two labeled flags: equation of a line | A given line A and your fixed slope; the joint (intersection) must land on a ±0.2 bolt: substitute into A, then solve for your b |
+| 3 | Fixed slope, rocks below and a strict branch above: a b window (2–5 values), unlabeled landing | Drop-in ramp, then stay above a rising ridge and below a cornice: an m window, unlabeled landing |
+| 4 | Meet the dog at the hut: only the hut's x is shown, so plug it into the dog's equation | Read the ghost's line from its graph only, then ride parallel to it a stated number of meters lower, through two hidden gates |
